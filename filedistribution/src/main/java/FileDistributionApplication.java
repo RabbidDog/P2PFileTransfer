@@ -4,13 +4,13 @@ import java.util.LinkedList;
  * Created by rabbiddog on 6/14/16.
  */
 
-import pft.*;
 public class FileDistributionApplication {
     private static String fileName;
     private static LinkedList<String> hostList = new LinkedList<String>();
     private static String duplicateFileMessage = "";
     public static void main(String args[])
     {
+
         if(args.length < 2){
             //Check if atleast one host and filename is added
             System.out.println("Print Usage here...");
