@@ -1,0 +1,5 @@
+#!/bin/sh
+#first argument is the path to the file to be distributed
+#second argument is the number of peers available where the files can be distributed
+OPTS=... 
+java $OPTS com.example.YourApp "$@"

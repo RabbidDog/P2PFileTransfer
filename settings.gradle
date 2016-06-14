@@ -1,2 +1,4 @@
 rootProject.name = 'p2pfiletransfer'
+include 'filedistribution'
+include 'torrentfiledownload'
 

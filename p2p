@@ -1,0 +1,5 @@
+#!/bin/sh
+#first argument is the torrent file that contains all required information
+OPTS=...
+java $OPTS com.example.YourApp "$@"
+
