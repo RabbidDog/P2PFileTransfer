@@ -4,8 +4,10 @@ import java.util.LinkedList;
  * Created by rabbiddog on 6/14/16.
  */
 
-import pft.*;
+import  pft.*;
 public class FileDistributionApplication {
+
+
     private static String fileName;
     private static LinkedList<String> hostList = new LinkedList<String>();
     private static String duplicateFileMessage = "";
