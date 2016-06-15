@@ -4,7 +4,8 @@ import java.util.LinkedList;
  * Created by rabbiddog on 6/14/16.
  */
 
-import  pft.*;
+
+import  pft.file_operation.PftFileManager;
 public class FileDistributionApplication {
 
 
@@ -13,13 +14,13 @@ public class FileDistributionApplication {
     private static String duplicateFileMessage = "";
     public static void main(String args[])
     {
+
         if(args.length < 2){
             //Check if atleast one host and filename is added
             System.out.println("Print Usage here...");
             System.exit(0);
         }
         parse(args);
-
         addInformationToDatabase();
 
     }
@@ -43,7 +44,6 @@ public class FileDistributionApplication {
                 if(fileParsed == true){
                     //Print a message at the end that ignoring second file
                     duplicateFileMessage += "Duplicate file" + args[i] + " will be ignored. \n";
-
                 }
                 //Store Filename
                 //Set file parsed to true
@@ -51,22 +51,18 @@ public class FileDistributionApplication {
                     fileParsed = true;
                     fileName = args[i];
                 }
-
             }
         }
     }
-
     private static String trimHost(String arg) {
        // System.out.println("Substring: " + arg.substring(0,(arg.length() -1)));
         if(arg.substring(0,9).equals("localhost")) return "localhost" + arg.substring(10, arg.length());
         return arg;
     }
-
     private static boolean isHost(String arg) {
         String delimiter = ":";
         String tokens[] = arg.split(delimiter);
         if(tokens.length == 1) return false;
         return true;
-
     }
 }
