@@ -36,5 +36,32 @@ public class FileDistributionHandler {
         }
         this.leftOverChunk = (int)this.fileSize % sizeOfChunks;
     }
-    
+
+    public void startDistribution(){
+        int peer_count = 0;
+        int numberOfPeers = nodeList.size();
+        int offset = 0;
+        byte[] chunk;
+        for (int i = 0; i < numberOfChunks; i++) {
+            chunk = fileManager.readFromPosition(offset, sizeOfChunks);
+            // A function call to pft to be implemented
+            //TODO : Modified Pft
+            // pft_upload(nodeList.get(peer_count), fileParameters, Offset, length....)
+            peer_count = (peer_count + 1) % numberOfPeers;
+            //upload the chunk to the next peer for high availability
+            // pft_upload(nodeList.get(peer_count), fileParameters, Offset, length....)
+            offset = offset + sizeOfChunks;
+        }
+        if (leftOverChunk !=0) {
+            //upload the leftoverChunk to two peers
+            chunk = fileManager.readFromPosition(offset, leftOverChunk);
+            // pft_upload(nodeList.get(peer_count), fileParameters, Offset, length....)
+            peer_count = (peer_count + 1) % numberOfPeers;
+            // pft_upload(nodeList.get(peer_count), fileParameters, Offset, length....)
+
+
+        }
+
+
+    }
 }
