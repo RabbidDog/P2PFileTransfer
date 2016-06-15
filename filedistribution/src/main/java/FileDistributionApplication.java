@@ -21,7 +21,6 @@ public class FileDistributionApplication {
             System.exit(0);
         }
         parse(args);
-
         addInformationToDatabase();
 
     }
@@ -45,7 +44,6 @@ public class FileDistributionApplication {
                 if(fileParsed == true){
                     //Print a message at the end that ignoring second file
                     duplicateFileMessage += "Duplicate file" + args[i] + " will be ignored. \n";
-
                 }
                 //Store Filename
                 //Set file parsed to true
@@ -53,22 +51,18 @@ public class FileDistributionApplication {
                     fileParsed = true;
                     fileName = args[i];
                 }
-
             }
         }
     }
-
     private static String trimHost(String arg) {
        // System.out.println("Substring: " + arg.substring(0,(arg.length() -1)));
         if(arg.substring(0,9).equals("localhost")) return "localhost" + arg.substring(10, arg.length());
         return arg;
     }
-
     private static boolean isHost(String arg) {
         String delimiter = ":";
         String tokens[] = arg.split(delimiter);
         if(tokens.length == 1) return false;
         return true;
-
     }
 }
