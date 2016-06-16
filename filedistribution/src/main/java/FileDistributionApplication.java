@@ -1,3 +1,5 @@
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.LinkedList;
 
 /**
@@ -22,6 +24,18 @@ public class FileDistributionApplication {
         }
         parse(args);
         addInformationToDatabase();
+
+        FileDistributionHandler fileDistributionHandler = null;
+        try {
+            fileDistributionHandler = new FileDistributionHandler(fileName,hostList);
+            fileDistributionHandler.setDistributionParameters();
+            fileDistributionHandler.startDistribution();
+
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
     }
 
