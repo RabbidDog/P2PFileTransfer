@@ -1,9 +1,11 @@
 import com.mongodb.*;
+import entity.FileChunkInfo;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.net.UnknownHostException;
-import java.util.concurrent.ConcurrentHashMap;
+
+import org.mongodb.morphia.*;
 
 /**
  * Created by rabbiddog on 6/18/16.
@@ -15,6 +17,7 @@ public class MongoDBAccessor implements IDataBase{
     private DB _db;
     private DBCollection _fileCollection;
     private DBCollection _peerInfoCollection;
+    private final Morphia _morphia;
     private static MongoDBAccessor ourInstance = new MongoDBAccessor();
 
     public static MongoDBAccessor getInstance() {
@@ -23,11 +26,15 @@ public class MongoDBAccessor implements IDataBase{
 
     private MongoDBAccessor() {
         _log = LogManager.getRootLogger();
+        _morphia = new Morphia();
         try
         {
-            _mongoClient = new MongoClient( "localhost" );
+            _morphia.mapPackage("entity");
+            final Datastore datastore = _morphia.createDatastore(new MongoClient("localhost"), "torrentmeta");
+            datastore.ensureIndexes();
+            /*_mongoClient = new MongoClient( "localhost" );
             _db = _mongoClient.getDB("torrentmeta");
-            _log.debug(TAG  + "Connected to database torrentmeta");
+            _log.debug(TAG  + "Connected to database torrentmeta");*/
 
             try
             {
@@ -40,19 +47,20 @@ public class MongoDBAccessor implements IDataBase{
 
 
 
-        }catch (UnknownHostException une)
+        }catch (Exception une)
         {
             _log.error(TAG + " constructor: "+une.getMessage() + " " + une.getStackTrace());
         }
     }
 
     @Override
-    public ConcurrentHashMap<Long, String[]> getChunkInfoForFileName(String fileName) {
-        return new ConcurrentHashMap<Long, String[]>();
+    public FileChunkInfo getChunkInfoForFileName(String fileName) {
+
     }
 
     @Override
-    public boolean saveFileInfo() {
+    public boolean saveFileInfo(FileChunkInfo info) {
+        
         return false;
     }
 }
