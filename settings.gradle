@@ -1,4 +1,7 @@
 rootProject.name = 'p2pfiletransfer'
 include 'filedistribution'
 include 'torrentfiledownload'
+include 'progressivefiletransfer'
+include 'database'
+include 'entity'
 

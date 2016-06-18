@@ -69,7 +69,6 @@ public class DownloadHandler {
                         downloadHandler(pair, Thread.currentThread());
                     }
                 });
-
             }
         }
 

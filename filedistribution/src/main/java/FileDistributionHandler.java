@@ -1,4 +1,8 @@
 import java.io.*;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.util.LinkedList;
 import java.util.Properties;
 
@@ -8,6 +12,7 @@ import java.util.Properties;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import pft.*;
+import java.io.FileReader;
 import pft.file_operation.PftFileManager;
 
 public class FileDistributionHandler {
@@ -35,7 +40,7 @@ public class FileDistributionHandler {
             fileSha = fileManager.getHash("SHA-1", 0, (int)this.fileSize);
         }
         else {
-            throw new FileNotFoundException("File doesnot Exist");
+            throw new FileNotFoundException("FileChunkInfo doesnot Exist");
         }
     }
     //set the number of chunks and sizeOfChunks
@@ -140,7 +145,7 @@ public class FileDistributionHandler {
 
     }
     private String getTorrentDirectory() {
-        //Get the path where the torrent file is to be created from the configTorrent.properties File
+        //Get the path where the torrent file is to be created from the configTorrent.properties FileChunkInfo
         {
             File configFile = new File("config.properties");
             String path;

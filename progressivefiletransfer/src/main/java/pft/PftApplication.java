@@ -1,7 +1,5 @@
-package torrent;
-/**
- * Created by rabbiddog on 6/14/16.
- */
+package pft;
+
 import org.apache.logging.log4j.*;
 import org.apache.logging.log4j.Logger.*;
 import org.apache.logging.log4j.core.LoggerContext;
@@ -16,24 +14,17 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.Properties;
 
-import pft.*;
-
-public class TorrentApplication {
-
+/**
+ * Created by rabbiddog on 6/18/16.
+ */
+public class PftApplication {
     private static String _logFilePath;
 
+    public static void main(String [] args) {
 
-    public static void main(String args[])
-    {
-        /*set up logging*/
-        TorrentApplication.loadLogFile();
-        TorrentApplication.setuplogging();
-        PacketService pckService = new PacketService();
-        pckService.Start();
-
-        pckService.Stop();
+        PftApplication.loadLogFile();
+        PftApplication.setuplogging();
     }
-
 
     private static void loadLogFile()
     {
@@ -85,4 +76,6 @@ public class TorrentApplication {
                 .add( builder.newAppenderRef( "rolling" ) ) );
         LoggerContext ctx = Configurator.initialize(builder.build());
     }
+
+
 }
