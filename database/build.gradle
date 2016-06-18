@@ -14,5 +14,7 @@ dependencies {
     compile group: 'org.apache.logging.log4j', name: 'log4j-api', version: '2.6.1'
     compile group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.6.1'
     compile 'org.javatuples:javatuples:1.2'
+    compile 'org.mongodb.morphia:morphia:1.2.0'
     compile 'org.mongodb:mongo-java-driver:2.13.3'
+    compile project(':entity')
 }

@@ -1,9 +1,9 @@
-import java.util.concurrent.ConcurrentHashMap;
+import entity.*;
 
 /**
  * Created by rabbiddog on 6/18/16.
  */
 public interface IDataBase {
-    public ConcurrentHashMap<Long, String[]> getChunkInfoForFileName(String fileName);
-    public boolean saveFileInfo();
+    public FileChunkInfo getChunkInfoForFileName(String fileName);
+    public boolean saveFileInfo(FileChunkInfo info);
 }
