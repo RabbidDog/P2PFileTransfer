@@ -53,7 +53,9 @@ public class FileDistributionHandler {
             this.sizeOfChunks = this.sizeOfChunks + (16*1024);
             this.numberOfChunks = (int)this.fileSize /sizeOfChunks;
         }
+
         this.leftOverChunk = (int)this.fileSize % sizeOfChunks;
+        if(this.leftOverChunk > 0) this.numberOfChunks++;
         //TODO: Implement Logger instead of System.out.print
         _log.info("fileSize: " + fileSize);
         _log.info("numberOfchunks: " + numberOfChunks);
@@ -132,16 +134,7 @@ public class FileDistributionHandler {
                 torrentFile.writeBytes(Integer.toString(peer_count) + "\r\n");
                 offset = offset + sizeOfChunks;
             }
-            if (leftOverChunk !=0) {
-                //upload the leftoverChunk to two peers
-                chunk = fileManager.readFromPosition(offset, leftOverChunk);
-                // pft_upload(nodeList.get(peer_count), fileParameters, Offset, length....)
-                torrentFile.writeBytes(Long.toString(leftOverChunk)+" ");
-                torrentFile.writeBytes(Integer.toString(peer_count)+" ");
-                peer_count = (peer_count + 1) % numberOfPeers;
-                // pft_upload(nodeList.get(peer_count), fileParameters, Offset, length....)
-                torrentFile.writeBytes(Integer.toString(peer_count) + "\r\n");
-            }
+
         }finally {
             torrentFile.close();
         }
