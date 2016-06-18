@@ -8,25 +8,42 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
+import java.net.DatagramPacket;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.DatagramChannel;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
-public class Server {
+import org.javatuples.*;
+import pft.frames.Frame;
+import torrent.TorrentApplication;
+
+public class Server extends PftChannel{
 
 
     private Logger _log;
+    private final String TAG = "pft.Server";
 
     public DatagramChannel get_serverChannel() {
         return _serverChannel;
     }
 
     private DatagramChannel _serverChannel;
-
+    private ConcurrentLinkedQueue<Pair<SocketAddress, ByteBuffer>> _sendBuffer;
+    private ConcurrentLinkedQueue<Pair<SocketAddress, ByteBuffer>> _receiveBuffer;
+    private ExecutorService _execService = Executors.newFixedThreadPool(2);
+    Future _processIncoming, _processOutgoing;
+    Framer _framer;
+    Deframer _deframer;
     public Server(int port)
     {
         _log = LogManager.getRootLogger();
+        _framer = new Framer();
+        _deframer = new Deframer();
         try
         {
              _serverChannel = DatagramChannel.open();
@@ -38,16 +55,101 @@ public class Server {
         }
     }
 
-    public SocketAddress receive(ByteBuffer buffer)
+    public void spin()
     {
-        try {
-            return _serverChannel.receive(buffer);
+         _processIncoming = _execService.submit(new Runnable() {
+
+            @Override
+            public void run() {
+                for(;;)
+                {
+                    if(Thread.currentThread().interrupted())
+                    {
+                        _log.debug(TAG +"spin : processIncoming: Thread requested to stop. Cosing.......");
+                        break;
+                    }
+                    try
+                    {
+                        if(_receiveBuffer.size() == 0)
+                        {
+                            Thread.sleep(100);
+                            continue;
+                        }
+                        /*if there is a packet to prcess*/
+                        byte[] payLoad = _receiveBuffer.poll().getValue1().array();
+                        Frame f = _deframer.deframe(payLoad);
+                        /*Send to Thread depending on the identifier*/
+
+                    }catch(InterruptedException ie)
+                    {
+                        _log.error(TAG + " spin: processIncoming: " + ie.getMessage() + " " + ie.getStackTrace());
+                    }
+                }
+
+            }
+        });
+
+        _processOutgoing = _execService.submit(new Runnable() {
+            @Override
+            public void run() {
+                for(;;)
+                {
+                    if(Thread.currentThread().interrupted())
+                    {
+                        _log.debug(TAG + "spin : processOutgoing: Thread requested to stop. Cosing.......");
+                        break;
+                    }
+                    try{
+                        if(_sendBuffer.size() == 0)
+                        {
+                            Thread.sleep(100);
+                            continue;
+                        }
+                        Pair<SocketAddress, ByteBuffer> toSend = _sendBuffer.poll();
+                        _serverChannel.send(toSend.getValue1(), toSend.getValue0() );
+
+                    }catch(IOException ioe)
+                    {
+                        _log.error(TAG + " spin : ProcessOutgoing : "+ioe.getMessage() + " " + ioe.getStackTrace());
+                    }
+                    catch (InterruptedException ie)
+                    {
+                        _log.error(TAG + " spin : ProcessOutgoing : "+ie.getMessage() + " " + ie.getStackTrace());
+                    }
+                }
+            }
+        });
+    }
+
+    @Override
+    public void stop() {
+
+        _processIncoming.cancel(true);
+        _processOutgoing.cancel(true);
+        try
+        {
+            _serverChannel.disconnect();
+            _serverChannel.close();
+
+        }catch (IOException ioe)
+        {
+            _log.error(TAG + "Error while closing DatagramChanel");
+        }
+    }
+
+    @Override
+    public void receive()
+    {
+        try
+        {
+            ByteBuffer buffer = ByteBuffer.allocate(8096);
+            SocketAddress sockAddr = this._serverChannel.receive(buffer);
+            /*push data to reveice buffer for further processing*/
+            this._receiveBuffer.add(Pair.with(sockAddr, buffer));
+
         }catch (IOException ioe)
         {
             _log.error(ioe.getMessage() + " " + ioe.getStackTrace());
-            return null;
         }
-
     }
-
 }

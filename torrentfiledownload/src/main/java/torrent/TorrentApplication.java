@@ -29,8 +29,9 @@ public class TorrentApplication {
         TorrentApplication.loadLogFile();
         TorrentApplication.setuplogging();
         PacketService pckService = new PacketService();
-        pckService.start();
+        pckService.Start();
 
+        pckService.Stop();
     }
 
 
