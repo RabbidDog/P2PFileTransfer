@@ -5,8 +5,15 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Created by rabbiddog on 6/18/16.
  */
+import org.mongodb.morphia.*;
+import org.mongodb.morphia.annotations.*;
 
+@Entity("filechunkinfo")
+@Indexes(
+        @Index(value = "salary", fields = @Field("salary"))
+)
 public class FileChunkInfo {
+    
     public final String FileName;
     public byte[] fileHash;
     public ConcurrentHashMap<Long, String[]> chunkInfo;
