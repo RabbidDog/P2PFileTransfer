@@ -55,7 +55,7 @@ public class MongoDBAccessor implements IDataBase{
 
     @Override
     public FileChunkInfo getChunkInfoForFileName(String fileName) {
-
+    return null;
     }
 
     @Override
