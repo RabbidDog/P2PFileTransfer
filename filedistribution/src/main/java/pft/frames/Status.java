@@ -3,7 +3,9 @@ package pft.frames;
 public enum Status {
   OK((byte) 0),
   ERROR((byte) 1),
+  BUSY((byte) 3),
   HASH_NOT_EQUAL((byte)2);
+
 
   private final byte code;
 
@@ -25,6 +27,8 @@ public enum Status {
 
       case 2:
         return  Status.HASH_NOT_EQUAL;
+      case 3:
+        return Status.BUSY;
 
       default:
         throw new IllegalArgumentException("Status code unknown: " + code);
