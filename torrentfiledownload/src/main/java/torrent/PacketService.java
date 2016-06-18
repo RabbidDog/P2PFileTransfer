@@ -4,7 +4,6 @@ package torrent;
  * Created by rabbiddog on 6/16/16.
  */
 import org.apache.logging.log4j.*;
-import org.apache.logging.log4j.Logger.*;
 
 import pft.*;
 
