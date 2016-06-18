@@ -1,3 +1,5 @@
+import java.io.*;
+import java.io.File;
 import org.apache.logging.log4j.Logger;
 import java.io.*;
 import java.io.FileNotFoundException;
@@ -12,6 +14,8 @@ import java.util.Properties;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import pft.*;
+
+import java.io.FileReader;
 
 import pft.file_operation.PftFileManager;
 
@@ -40,7 +44,7 @@ public class FileDistributionHandler {
             fileSha = fileManager.getHash("SHA-1", 0, (int)this.fileSize);
         }
         else {
-            throw new FileNotFoundException("File doesnot Exist");
+            throw new FileNotFoundException("FileChunkInfo doesnot Exist");
         }
     }
     //set the number of chunks and sizeOfChunks
@@ -50,7 +54,9 @@ public class FileDistributionHandler {
             this.sizeOfChunks = this.sizeOfChunks + (16*1024);
             this.numberOfChunks = (int)this.fileSize /sizeOfChunks;
         }
+
         this.leftOverChunk = (int)this.fileSize % sizeOfChunks;
+        if(this.leftOverChunk > 0) this.numberOfChunks++;
         //TODO: Implement Logger instead of System.out.print
         _log.info("fileSize: " + fileSize);
         _log.info("numberOfchunks: " + numberOfChunks);
@@ -129,23 +135,14 @@ public class FileDistributionHandler {
                 torrentFile.writeBytes(Integer.toString(peer_count) + "\r\n");
                 offset = offset + sizeOfChunks;
             }
-            if (leftOverChunk !=0) {
-                //upload the leftoverChunk to two peers
-                chunk = fileManager.readFromPosition(offset, leftOverChunk);
-                // pft_upload(nodeList.get(peer_count), fileParameters, Offset, length....)
-                torrentFile.writeBytes(Long.toString(leftOverChunk)+" ");
-                torrentFile.writeBytes(Integer.toString(peer_count)+" ");
-                peer_count = (peer_count + 1) % numberOfPeers;
-                // pft_upload(nodeList.get(peer_count), fileParameters, Offset, length....)
-                torrentFile.writeBytes(Integer.toString(peer_count) + "\r\n");
-            }
+
         }finally {
             torrentFile.close();
         }
 
     }
     private String getTorrentDirectory() {
-        //Get the path where the torrent file is to be created from the configTorrent.properties File
+        //Get the path where the torrent file is to be created from the configTorrent.properties FileChunkInfo
         {
             File configFile = new File("config.properties");
             String path;
