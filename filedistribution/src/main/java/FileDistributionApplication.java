@@ -9,7 +9,6 @@ import java.util.Properties;
  * Created by rabbiddog on 6/14/16.
  */
 
-
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
