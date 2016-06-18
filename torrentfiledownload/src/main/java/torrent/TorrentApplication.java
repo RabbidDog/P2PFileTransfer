@@ -1,96 +1,39 @@
+package torrent;
+/**
+ * Created by rabbiddog on 6/14/16.
+ */
+import org.apache.logging.log4j.*;
+import org.apache.logging.log4j.Logger.*;
+import org.apache.logging.log4j.core.LoggerContext;
+import org.apache.logging.log4j.core.appender.*;
+import org.apache.logging.log4j.core.config.Configurator;
+import org.apache.logging.log4j.core.config.builder.api.*;
+import org.apache.logging.log4j.core.config.builder.impl.BuiltConfiguration;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.LinkedList;
 import java.util.Properties;
 
-/**
- * Created by rabbiddog on 6/14/16.
- */
+import pft.*;
 
+public class TorrentApplication {
 
-import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.core.LoggerContext;
-import org.apache.logging.log4j.core.appender.ConsoleAppender;
-import org.apache.logging.log4j.core.config.Configurator;
-import org.apache.logging.log4j.core.config.builder.api.*;
-import org.apache.logging.log4j.core.config.builder.impl.BuiltConfiguration;
-import  pft.file_operation.PftFileManager;
-public class FileDistributionApplication {
-
-
-    private static String fileName;
     private static String _logFilePath;
-    private static Logger _log;
 
-    private static LinkedList<String> hostList = new LinkedList<String>();
-    private static String duplicateFileMessage = "";
+
     public static void main(String args[])
-
     {
-        loadLogFile();
-        setuplogging();
-        _log = LogManager.getRootLogger();
+        /*set up logging*/
+        TorrentApplication.loadLogFile();
+        TorrentApplication.setuplogging();
+        PacketService pckService = new PacketService();
+        pckService.start();
 
-        if(args.length < 2){
-            //Check if atleast one host and filename is added
-            _log.error("Invalid command.");
-            System.exit(0);
-        }
-        parse(args);
-        _log.info("FileName:" + fileName);
-        _log.info("HostNames"+ hostList);
-        _log.info(duplicateFileMessage);
-
-        FileDistributionHandler fileDistributionHandler = null;
-        try {
-            fileDistributionHandler = new FileDistributionHandler(fileName,hostList);
-            fileDistributionHandler.setDistributionParameters();
-            fileDistributionHandler.startDistribution();
-            fileDistributionHandler.generateTorrentFile();
-
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
     }
 
-    private static void parse(String[] args) {
-        boolean fileParsed = false;
-        for(int i=0;i<args.length;i++) {
-            if(isHost(args[i])) {
-                String trimmedHost = trimHost(args[i]);
-                hostList.add(trimmedHost);
-            }
-            else {
-                if(fileParsed == true){
-                    //Print a message at the end that ignoring second file
-                    duplicateFileMessage += "Duplicate file" + args[i] + " will be ignored. \n";
-                }
-                //Store Filename
-                //Set file parsed to true
-                else{
-                    fileParsed = true;
-                    fileName = args[i];
-                }
-            }
-        }
-    }
-    private static String trimHost(String arg) {
-        // System.out.println("Substring: " + arg.substring(0,(arg.length() -1)));
-        if(arg.substring(0,9).equals("localhost")) return "localhost" + arg.substring(10, arg.length());
-        return arg;
-    }
-    private static boolean isHost(String arg) {
-        String delimiter = ":";
-        String tokens[] = arg.split(delimiter);
-        if(tokens.length == 1) return false;
-        return true;
-    }
+
     private static void loadLogFile()
     {
         File configFile = new File("config.properties");

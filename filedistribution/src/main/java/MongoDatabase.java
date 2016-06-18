@@ -1,4 +1,4 @@
-import Entities.Node;
+import entities.Node;
 
 /**
  * Created by rabbiddog on 6/14/16.

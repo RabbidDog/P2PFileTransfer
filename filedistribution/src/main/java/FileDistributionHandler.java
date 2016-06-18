@@ -1,16 +1,18 @@
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InterruptedIOException;
-import java.io.RandomAccessFile;
+import java.io.*;
 import java.util.LinkedList;
+import java.util.Properties;
 
 /**
  * Created by ankur on 14.06.2016.
  */
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import pft.*;
 import pft.file_operation.PftFileManager;
 
 public class FileDistributionHandler {
+    private Logger _log;
+
     private String fileName;
     private LinkedList<String> nodeList;
     private PftFileManager fileManager;
@@ -22,6 +24,8 @@ public class FileDistributionHandler {
     private int leftOverChunk;
 
     public FileDistributionHandler(String fileName, LinkedList<String> nodeList) throws FileNotFoundException {
+        _log = LogManager.getRootLogger();
+
         this.fileName = fileName;
         this.nodeList = nodeList;
         fileManager = new PftFileManager(fileName);
@@ -43,10 +47,10 @@ public class FileDistributionHandler {
         }
         this.leftOverChunk = (int)this.fileSize % sizeOfChunks;
         //TODO: Implement Logger instead of System.out.print
-        System.out.println("numberOfchunks: " + numberOfChunks);
-        System.out.println("sizerOfchunks: " + sizeOfChunks);
-        System.out.println("leftOver: " + leftOverChunk);
-
+        _log.info("fileSize: " + fileSize);
+        _log.info("numberOfchunks: " + numberOfChunks);
+        _log.info("sizerOfchunks: " + sizeOfChunks);
+        _log.info("leftOver: " + leftOverChunk);
     }
 
     public void startDistribution() throws IOException {
@@ -54,10 +58,44 @@ public class FileDistributionHandler {
         int numberOfPeers = nodeList.size();
         int offset = 0;
         byte[] chunk;
+
+
+        try{
+
+            for (int i = 0; i < numberOfChunks; i++) {
+                chunk = fileManager.readFromPosition(offset, sizeOfChunks);
+                // A function call to pft to be implemented
+                //TODO : Modified Pft
+                // pft_upload(nodeList.get(peer_count), fileParameters, Offset, length....)
+
+                peer_count = (peer_count + 1) % numberOfPeers;
+                //upload the chunk to the next peer for high availability
+                // pft_upload(nodeList.get(peer_count), fileParameters, Offset, length....)
+
+                offset = offset + sizeOfChunks;
+            }
+            if (leftOverChunk !=0) {
+                //upload the leftoverChunk to two peers
+                chunk = fileManager.readFromPosition(offset, leftOverChunk);
+                // pft_upload(nodeList.get(peer_count), fileParameters, Offset, length....)
+
+                peer_count = (peer_count + 1) % numberOfPeers;
+                // pft_upload(nodeList.get(peer_count), fileParameters, Offset, length....)
+            }
+        }finally {
+        }
+
+    }
+    public void generateTorrentFile() throws IOException {
+        int peer_count = 0;
+        int numberOfPeers = nodeList.size();
+        int offset = 0;
+        byte[] chunk;
         String path = getTorrentDirectory();
         //TODO: Implement Logger instead of System.out.print
+        _log.info("Torrent file directory"+path);
 
-        System.out.println("Torrent file directory"+path);
+        System.out.println();
 
         RandomAccessFile torrentFile = new RandomAccessFile(path + "\\" + fileName + ".torrent", "rw");
         try{
@@ -103,25 +141,25 @@ public class FileDistributionHandler {
     }
     private String getTorrentDirectory() {
         //Get the path where the torrent file is to be created from the configTorrent.properties File
-        RandomAccessFile raf = null;
-        try {
-            raf = new RandomAccessFile("configTorrent.properties", "r");
-            String path = raf.readLine();
-            return path;
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
-        }
-        finally{
-            if(raf != null){
-                try {
-                    raf.close();
-                } catch (IOException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                }
+        {
+            File configFile = new File("config.properties");
+            String path;
+            try {
+                FileReader reader = new FileReader(configFile);
+                Properties props = new Properties();
+                props.load(reader);
+                path= (props.getProperty("torrentDirectory"));
+                reader.close();
+                return path;
 
+            } catch (FileNotFoundException ex) {
+                _log.error("Error in reading Configuration file while searching for path to Log file");
+                return null;
+            } catch (IOException ex) {
+                _log.error("Error in reading Configuration file while searching for path to Log file");
+                return null;
             }
+
         }
     }
 }
