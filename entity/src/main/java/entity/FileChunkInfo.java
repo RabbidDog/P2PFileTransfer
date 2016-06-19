@@ -1,11 +1,10 @@
 package entity;
 
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.List;
 
 /**
  * Created by rabbiddog on 6/18/16.
  */
-import org.mongodb.morphia.*;
 import org.mongodb.morphia.annotations.*;
 
 @Entity()
@@ -14,7 +13,8 @@ public class FileChunkInfo {
     public long id;
     public final String FileName;
     public byte[] fileHash;
-    public ConcurrentHashMap<Long, String[]> chunkInfo;
+    @Reference
+    public List<Chunk> chunkInfo;
     public long size;
     public long chunkSize;
     public long chunkCount;
@@ -30,7 +30,7 @@ public class FileChunkInfo {
         this.FileName = fileName;
     }
 
-    public void setChunkInfo(ConcurrentHashMap<Long, String[]> info)
+    public void setChunkInfo(List<Chunk> info)
     {
         this.chunkInfo = info;
     }

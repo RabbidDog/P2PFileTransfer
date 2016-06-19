@@ -29,8 +29,8 @@ public class Server extends PftChannel{
     }
 
     private DatagramChannel _serverChannel;
-    private ConcurrentLinkedQueue<Pair<ByteBuffer ,SocketAddress>> _sendBuffer;
-    private ConcurrentLinkedQueue<Pair<ByteBuffer, SocketAddress>> _receiveBuffer;
+    public final ConcurrentLinkedQueue<Pair<ByteBuffer ,SocketAddress>> _sendBuffer;
+    public final ConcurrentLinkedQueue<Pair<ByteBuffer, SocketAddress>> _receiveBuffer;
     private ExecutorService _execService = Executors.newFixedThreadPool(2);
     Future _processIncoming, _processOutgoing;
     Framer _framer;
@@ -40,6 +40,9 @@ public class Server extends PftChannel{
         _log = LogManager.getRootLogger();
         _framer = new Framer();
         _deframer = new Deframer();
+
+        _sendBuffer = new ConcurrentLinkedQueue<Pair<ByteBuffer ,SocketAddress>>();
+        _receiveBuffer = new ConcurrentLinkedQueue<Pair<ByteBuffer ,SocketAddress>>();
         try
         {
              _serverChannel = DatagramChannel.open();
@@ -74,7 +77,8 @@ public class Server extends PftChannel{
                         /*if there is a packet to prcess*/
                         byte[] payLoad = _receiveBuffer.poll().getValue0().array();
                         Frame f = _deframer.deframe(payLoad);
-                        /*Send to Thread depending on the identifier*/
+                        /*Expecting UploadPartial OR DataRequest OR DataResponse
+                        * Push to corresponding collection depending on Identifier*/
 
                     }catch(InterruptedException ie)
                     {

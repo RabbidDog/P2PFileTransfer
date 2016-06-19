@@ -1,8 +1,15 @@
     package pft.file_operation;
 
+
     import java.io.FileNotFoundException;
     import java.io.IOException;
     import java.io.RandomAccessFile;
+    import java.io.File;
+    import java.io.FileNotFoundException;
+    import java.io.IOException;
+    import java.io.RandomAccessFile;
+    import java.nio.file.Files;
+    import java.nio.file.Path;
     import java.util.concurrent.ConcurrentHashMap;
 
     /**
@@ -37,4 +44,44 @@ public interface IFileFacade {
         }
 
     }
+        public static boolean bufferedRead(Path filePath, long offset, long length, int chunkSize, ConcurrentHashMap<Long, byte[]> buffer)
+        {
+            if(Files.notExists(filePath))
+                return false;
+            else if(!Files.isReadable(filePath))
+                return false;
+
+            File file = new File(filePath.toString());
+            long fileSize = file.length();
+            if(offset > fileSize)
+                return false;
+
+            long end = (offset + length)>fileSize ? fileSize : (offset + length);
+
+            try
+            {
+                RandomAccessFile raf = new RandomAccessFile(file, "r");
+                raf.seek(offset);
+                while (offset < end)
+                {
+                    if((end-offset) < chunkSize)
+                        chunkSize = (int)(end-offset);
+                    byte[] chunkbuffer = new byte[chunkSize];
+                    raf.read(chunkbuffer, 0, chunkSize);
+                    buffer.putIfAbsent(offset, chunkbuffer);
+                    offset += chunkSize;
+                }
+
+                raf.close();
+                return true;
+            }
+            catch (FileNotFoundException fex)
+            {
+                return false;
+            }catch (IOException ioex)
+            {
+                return false;
+            }
+        }
+
 }
