@@ -68,7 +68,6 @@ public class UploadRequestMarshaller implements Marshaller<UploadRequest> {
       checkState(buffer.writerIndex() == FILENAME_LENGTH);
 
       buffer.writeInt((int) frame.size());
-
       checkState(buffer.writerIndex() == FILENAME_LENGTH + SIZE_LENGTH);
 
       buffer.writeBytes(frame.sha1());

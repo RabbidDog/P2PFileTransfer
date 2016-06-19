@@ -19,6 +19,8 @@ public class Framer {
       payload = Marshallers.DOWNLOAD_RESPONSE.encode((DownloadResponse) frame);
     } else if (frame instanceof UploadRequest) {
       payload = Marshallers.UPLOAD_REQUEST.encode((UploadRequest) frame);
+    }else if(frame instanceof PartialUpoadRequest){
+      payload = Marshallers.PARTIAL_UPLOAD_REQUEST.encode((PartialUpoadRequest) frame);
     } else if (frame instanceof UploadResponse) {
       payload = Marshallers.UPLOAD_RESPONSE.encode((UploadResponse) frame);
     } else if (frame instanceof DataRequest) {

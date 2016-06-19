@@ -59,6 +59,8 @@ public class Deframer {
 
         case 9:
           return Marshallers.TERMINATION_REQUEST.decode(identifier, payload);
+        case 10:
+          return Marshallers.PARTIAL_UPLOAD_REQUEST.decode(identifier, payload);
 
         default:
           throw new UnsupportedOperationException("The frame type: '" + type + "' is not supported.");
