@@ -21,10 +21,10 @@ public class SendDataRequestPacket implements Callable<Long> {
 
     private int identifier;
     private String fileName;
-    private  long startOffset;
-    private  long length;
-    private  SocketAddress destination;
-    private  ConcurrentHashMap<Long, Pair<ByteBuffer ,SocketAddress>> pendingPackets;
+    private long startOffset;
+    private long length;
+    private SocketAddress destination;
+    private ConcurrentHashMap<Long, Pair<ByteBuffer ,SocketAddress>> pendingPackets;
     private ConcurrentLinkedQueue<Pair<ByteBuffer ,SocketAddress>> _sendBuffer;
     private final long defaultPacketSize = 512;
     private Framer _framer;
@@ -42,7 +42,7 @@ public class SendDataRequestPacket implements Callable<Long> {
         _framer = new Framer();
         _sendBuffer = sendBuffer;
         _log = LogManager.getRootLogger();
-        TAG = "FileName: "+fileName+ " offset: " + startOffset + " identifier: "+identifier;
+        TAG = "SendDataRequestPacket : FileName: "+fileName+ " offset: " + startOffset + " identifier: "+identifier;
     }
     @Override
     public Long call() {

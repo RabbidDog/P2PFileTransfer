@@ -6,6 +6,9 @@ package torrent;
 import org.apache.logging.log4j.*;
 
 import pft.*;
+import pft.frames.DataRequest;
+import pft.frames.DataResponse;
+import pft.frames.PartialUpoadRequest;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -18,6 +21,7 @@ import java.nio.channels.Selector;
 import java.util.Properties;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 
 public class PacketService {
@@ -31,6 +35,9 @@ public class PacketService {
     private SelectionKey[] _keys; //size:2 key0 for server. key1 for client
     private final String TAG = "PacketService ";
     private volatile ConcurrentHashMap<Integer, ExecutorService> _chunkToThreadMap;
+    private ConcurrentHashMap<Integer, ConcurrentLinkedQueue<DataRequest>> _dataRequestQueueForIdentifier; //will be used by upload processes
+    private ConcurrentHashMap<Integer, ConcurrentLinkedQueue<DataResponse>> _dataResponseQueueForIdentifier; //will be used by download processes
+    private ConcurrentLinkedQueue<PartialUpoadRequest> _incomingUploadRequests; //new upload requests;
     private Random _rand;
 
     public PacketService()
@@ -97,6 +104,8 @@ public class PacketService {
                 }
             }
         }
+
+        /*create receive buffer by Identifer, where processes can register their buffer*/
     }
 
     public void Stop()

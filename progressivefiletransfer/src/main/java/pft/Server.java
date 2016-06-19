@@ -77,7 +77,8 @@ public class Server extends PftChannel{
                         /*if there is a packet to prcess*/
                         byte[] payLoad = _receiveBuffer.poll().getValue0().array();
                         Frame f = _deframer.deframe(payLoad);
-                        /*Send to Thread depending on the identifier*/
+                        /*Expecting UploadPartial OR DataRequest OR DataResponse
+                        * Push to corresponding collection depending on Identifier*/
 
                     }catch(InterruptedException ie)
                     {

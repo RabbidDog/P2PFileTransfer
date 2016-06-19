@@ -12,6 +12,7 @@ public class Chunk {
     @Id
     public long Id;
     public long offset;
+    public long length;
     @Reference
     public List<Peer> peerList;
     public boolean isDownloaded;

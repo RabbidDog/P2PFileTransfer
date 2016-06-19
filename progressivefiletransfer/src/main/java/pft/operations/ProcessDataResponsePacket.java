@@ -27,7 +27,7 @@ public class ProcessDataResponsePacket implements Callable<Long>{
     private volatile long currentOffset;
     private volatile AtomicLong highestOffsetReceived;
     private  long length;
-    private  LinkedBlockingQueue<Frame> incomingFrames;
+    private  ConcurrentLinkedQueue<Frame> incomingFrames;
     private ConcurrentHashMap<Long, Pair<ByteBuffer ,SocketAddress>> pendingPackets;
     private final Logger _log;
     private String TAG;
@@ -36,7 +36,7 @@ public class ProcessDataResponsePacket implements Callable<Long>{
     private SocketAddress destination;
     private ConcurrentLinkedQueue<Pair<ByteBuffer ,SocketAddress>> sendBuffer;
 
-    public ProcessDataResponsePacket(int identifier, String fileName, long currentOffset, long length, AtomicLong highestOffsetReceived, LinkedBlockingQueue<Frame> incomingFrames, ConcurrentHashMap<Long, Pair<ByteBuffer ,SocketAddress>> pendingPackets,SocketAddress destination, ConcurrentLinkedQueue<Pair<ByteBuffer ,SocketAddress>> sendBuffer)
+    public ProcessDataResponsePacket(int identifier, String fileName, long currentOffset, long length, AtomicLong highestOffsetReceived, ConcurrentLinkedQueue<Frame> incomingFrames, ConcurrentHashMap<Long, Pair<ByteBuffer ,SocketAddress>> pendingPackets,SocketAddress destination, ConcurrentLinkedQueue<Pair<ByteBuffer ,SocketAddress>> sendBuffer)
     {
         this.identifier = identifier;
         this.fileName = fileName;
@@ -54,7 +54,7 @@ public class ProcessDataResponsePacket implements Callable<Long>{
 
     @Override
     public Long call() throws Exception {
-        System.out.println("Start Thread to process incoming packets");
+        _log.debug(TAG + "Start Thread to process incoming packets");
 
         byte[] packetbuffer = new byte[8196]; //check what happens if datagram is larger tha 512
         DatagramPacket packet = new DatagramPacket(packetbuffer, packetbuffer.length);
