@@ -19,4 +19,7 @@ public interface IFileFacade {
     public String getFileName();
     public boolean deleteFile();
     public boolean bufferedRead(long offset, long length, int chunkSize, ConcurrentHashMap<Long, byte[]> buffer);
+        public static long writeBytesToFile(String fileName, long offset, byte[] data){
+            return 0;
+        }
 }

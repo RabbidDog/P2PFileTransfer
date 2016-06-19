@@ -1,13 +1,18 @@
+package database;
+
 import com.mongodb.*;
+import entity.Chunk;
 import entity.FileChunkInfo;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.net.UnknownHostException;
 import java.util.List;
 
 import org.mongodb.morphia.*;
-import org.mongodb.morphia.query.MorphiaIterator;
+import org.mongodb.morphia.query.Query;
+import org.mongodb.morphia.query.UpdateOperations;
+import org.mongodb.morphia.query.UpdateResults;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 /**
  * Created by rabbiddog on 6/18/16.
@@ -15,23 +20,30 @@ import org.mongodb.morphia.query.MorphiaIterator;
 public class MongoDBAccessor implements IDataBase{
     private MongoClient _mongoClient;
     private Logger _log;
-    private final String TAG = "MongoDBAccessor";
+    private final String TAG = "database.MongoDBAccessor";
     private DB _db;
     private DBCollection _fileCollection;
     private DBCollection _peerInfoCollection;
     private final Morphia _morphia;
     private final Datastore _datastore;
-    private static MongoDBAccessor ourInstance = new MongoDBAccessor();
+    private static MongoDBAccessor ourInstance;
 
     public static MongoDBAccessor getInstance() {
         return ourInstance;
     }
+    public static MongoDBAccessor getInstance(String peerName){
+        if(null == ourInstance)
+        {
+            ourInstance = new MongoDBAccessor(peerName);
+        }
+        return ourInstance;
+    }
 
-    private MongoDBAccessor() {
+    private MongoDBAccessor(String peerName) {
         _log = LogManager.getRootLogger();
         _morphia = new Morphia();
         _morphia.mapPackage("entity");
-        _datastore = _morphia.createDatastore(new MongoClient("localhost"), "torrentmeta");
+        _datastore = _morphia.createDatastore(new MongoClient("localhost"), "torrentmeta"+peerName);
         _datastore.ensureIndexes();
         try
         {
@@ -80,5 +92,21 @@ public class MongoDBAccessor implements IDataBase{
         _datastore.save(info);
         _log.debug(TAG + " saveFileInfo: call to save file by name" + info.FileName +" succeded");
         return true;
+    }
+
+    @Override
+    public boolean updateChunkInfo(Chunk chunk) {
+        Query<Chunk> ch = _datastore.createQuery(Chunk.class)
+                .filter("Id ==", chunk.Id );
+        UpdateOperations<Chunk> up = _datastore.createUpdateOperations(Chunk.class)
+                .set("isDownloaded", chunk.isDownloaded).set("peerList", chunk.peerList);
+
+        UpdateResults results = _datastore.update(ch, up);
+        return true;
+    }
+
+    @Override
+    public List<Chunk> getChunksByDownloadStatus(String fileName, boolean status) {
+        throw new NotImplementedException();
     }
 }

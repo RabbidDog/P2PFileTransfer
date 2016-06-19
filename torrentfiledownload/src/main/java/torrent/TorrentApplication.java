@@ -31,7 +31,7 @@ public class TorrentApplication {
         PacketService pckService = new PacketService();
         pckService.Start();
 
-        pckService.Stop();
+        //pckService.Stop();
     }
 
 
