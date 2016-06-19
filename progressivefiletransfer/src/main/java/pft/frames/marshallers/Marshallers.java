@@ -9,6 +9,8 @@ public class Marshallers {
       = new DownloadResponseMarshaller();
   public static final Marshaller<UploadRequest> UPLOAD_REQUEST
       = new UploadRequestMarshaller();
+  public static final Marshaller<PartialUpoadRequest> PARTIAL_UPLOAD_REQUEST
+          = new PartialUploadRequestMarshaller();
   public static final Marshaller<UploadResponse> UPLOAD_RESPONSE
       = new UploadResponseMarshaller();
   public static final Marshaller<DataRequest> DATA_REQUEST

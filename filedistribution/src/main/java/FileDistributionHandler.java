@@ -108,10 +108,11 @@ public class FileDistributionHandler {
 
         System.out.println();
 
-        RandomAccessFile torrentFile = new RandomAccessFile(path + "\\" + fileName + ".torrent", "rw");
+        RandomAccessFile torrentFile = new RandomAccessFile(new File(path + "\\" + fileName + ".torrent"), "rw");
         try{
             torrentFile.writeBytes(fileName + "\r\n");
-            torrentFile.writeBytes(fileSha + "\r\n");
+            torrentFile.write(fileSha, 0, 20);
+            torrentFile.writeBytes("\r\n");
             torrentFile.writeBytes(fileSize + "\r\n");
             torrentFile.writeBytes(Integer.toString(numberOfChunks) + "\r\n");
             torrentFile.writeBytes(Integer.toString(sizeOfChunks) + "\r\n");
@@ -141,6 +142,8 @@ public class FileDistributionHandler {
         }
 
     }
+
+
     private String getTorrentDirectory() {
         //Get the path where the torrent file is to be created from the configTorrent.properties FileChunkInfo
         {
