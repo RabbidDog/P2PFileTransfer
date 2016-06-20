@@ -25,7 +25,6 @@ public class SendDataResponsePacket implements Runnable {
     private long startOffset;
     private long totalLength;
     private SocketAddress destination;
-    private ConcurrentHashMap<Long, Pair<ByteBuffer ,SocketAddress>> pendingPackets;
     private ConcurrentLinkedQueue<Pair<ByteBuffer ,SocketAddress>> _sendBuffer;
     private final int defaultPacketSize = 512;
     private Framer _framer;
@@ -35,12 +34,12 @@ public class SendDataResponsePacket implements Runnable {
     private ConcurrentHashMap<Long, byte[]> bufferedFileData;
     private ConcurrentLinkedQueue<DataRequest> _dataRequests;
 
-    public SendDataResponsePacket(int identifier, IFileFacade fileManager, long startOffset, long length, SocketAddress destination, ConcurrentLinkedQueue<Pair<ByteBuffer ,SocketAddress>> sendBuffer, ConcurrentHashMap<Long, byte[]> bufferedFileData, ConcurrentLinkedQueue<DataRequest> dataRequests)
+    public SendDataResponsePacket(int identifier, IFileFacade fileManager, long startOffset, long totalLength, SocketAddress destination, ConcurrentLinkedQueue<Pair<ByteBuffer ,SocketAddress>> sendBuffer, ConcurrentHashMap<Long, byte[]> bufferedFileData, ConcurrentLinkedQueue<DataRequest> dataRequests)
     {
         this.identifier = identifier;
         this.fileManager = fileManager;
         this.startOffset = startOffset;
-        this.totalLength = length;
+        this.totalLength = totalLength;
         this.destination = destination;
         this.bufferedFileData = bufferedFileData;
         this._dataRequests = dataRequests;
@@ -52,6 +51,7 @@ public class SendDataResponsePacket implements Runnable {
     @Override
     public void run() {
         long lastTimePacketsReceived = System.currentTimeMillis();
+        _log.debug(TAG  + "SendDataResponsePacket process started");
         for(;;)
         {
             if((lastTimePacketsReceived - System.currentTimeMillis()) > 1000) //10sec
@@ -68,11 +68,11 @@ public class SendDataResponsePacket implements Runnable {
                 }
 
                 long reqOfset = req.offset();
-                if(reqOfset> (startOffset + totalLength))
+                /*if(reqOfset> (startOffset + totalLength))
                 {
                     _log.debug(TAG + " request offset greater than last position inside chuck.Indication to end");
                     break;
-                }
+                }*/
                 long reqLength = req.length();
                 _log.debug(TAG + "Offset received: " + reqOfset);
                 _log.debug(TAG + "Length  received: " + reqLength);
@@ -85,7 +85,7 @@ public class SendDataResponsePacket implements Runnable {
                     readBytes = (int)reqLength;
                 }
                 /*read data from file at one go*/
-                if(!bufferedFileData.containsKey(startOffset))
+                if(!bufferedFileData.containsKey(reqOfset))
                 {
                     _log.debug(TAG + "Offset not in buffer. Read from file");
                     fileManager.bufferedRead(startOffset, reqLength*5, defaultPacketSize, bufferedFileData);

@@ -1,13 +1,14 @@
-package torrent;
+package pft;
 
 /**
  * Created by rabbiddog on 6/16/16.
  */
-import org.apache.logging.log4j.*;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.javatuples.Pair;
-import pft.*;
 import pft.file_operation.IFileFacade;
+import pft.file_operation.PftFileManager;
 import pft.frames.DataRequest;
 import pft.frames.DataResponse;
 import pft.frames.Frame;
@@ -22,8 +23,10 @@ import java.nio.ByteBuffer;
 import java.nio.channels.DatagramChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
+import java.util.Iterator;
 import java.util.Properties;
-import java.util.*;
+import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
@@ -46,8 +49,9 @@ public class PacketService {
     public ConcurrentLinkedQueue<Pair<Frame,SocketAddress>> _allreceivedframe;
     public ConcurrentHashMap<String, IFileFacade> _fileManagerMap;
     private Random _rand;
+    private final String _mainFolder;
 
-    public PacketService()
+    public PacketService(String mainFolder)
     {
         _log = LogManager.getRootLogger();
         loadConfiguration();
@@ -58,6 +62,7 @@ public class PacketService {
         _allreceivedframe = new ConcurrentLinkedQueue<Pair<Frame,SocketAddress>>();
         _fileManagerMap = new ConcurrentHashMap<String, IFileFacade> ();
         _server = new Server(_serverListenPort);
+        _mainFolder = mainFolder;
         //_client = new Client(_clientPort);
 
         MAX_PACKET = 8096;
@@ -110,7 +115,9 @@ public class PacketService {
                         DataRequest req = (DataRequest) f;
                         if(_dataRequestQueueForIdentifier.containsKey(req.identifier()))
                         {
-
+                            _log.debug(TAG + "Found existing datreq buffer. Pusing request in buffer");
+                            ConcurrentLinkedQueue<DataRequest> reqBuffer = _dataRequestQueueForIdentifier.get(req.identifier());
+                            reqBuffer.add(req);
                         }else
                         {
                             if(req.identifier() == 0)
@@ -119,22 +126,51 @@ public class PacketService {
                                 continue;
                             }
                             ConcurrentLinkedQueue<DataRequest> reqBuffer = new ConcurrentLinkedQueue<DataRequest>();
+                            reqBuffer.add(req);
                             _dataRequestQueueForIdentifier.putIfAbsent(req.identifier(), reqBuffer);
                             IFileFacade fm;
                             if(_fileManagerMap.containsKey(req.fileName()))
                             {
-                                
+                                _log.debug(TAG + " Existing Filemanager not found. Create new one");
+                                fm = new PftFileManager(_mainFolder+req.fileName());
+                                _fileManagerMap.putIfAbsent(req.fileName(), fm);
                             }
-                            DownloadResponder.respond(req, poll.getValue1(), _server._sendBuffer, reqBuffer, )
+                            else{
+                                _log.debug(TAG + " Existing Filemanager found");
+                                fm = _fileManagerMap.get(_mainFolder+req.fileName());
+                            }
+                            DownloadResponder.respond(req, poll.getValue1(), _server._sendBuffer, reqBuffer, fm);
                         }
-
                     }
                     else if(f instanceof DataResponse)
                     {
+                        DataResponse resp = (DataResponse)f;
+
+                        /*a buffer with identifier must be present*/
+                        if(_dataResponseQueueForIdentifier.containsKey(resp.identifier()))
+                        {
+                            ConcurrentLinkedQueue<DataResponse> respBuffer = _dataResponseQueueForIdentifier.get(resp.identifier());
+                            respBuffer.add(resp);
+                        }else
+                        {
+                            _log.debug(TAG + " DataResponse is unexpected identifier received. Packet will not be processed");
+                        }
 
                     }else if(f instanceof PartialUpoadRequest)
                     {
-
+                        PartialUpoadRequest req = (PartialUpoadRequest)f;
+                        /*dataresponse buffer for identifier will not be present for a new upload request*/
+                        if(_dataResponseQueueForIdentifier.containsKey(req.identifier()))
+                        {
+                            _log.debug(TAG + " Duplicate PartialUpoadRequest with identifier "+req.identifier() + " received. Ignoring packet");
+                        }
+                        else
+                        {
+                            _log.debug(TAG + " New PartialUpoadRequest with identifier" + req.identifier() + " reeived recognized");
+                            ConcurrentLinkedQueue<DataResponse> respBuffer = new ConcurrentLinkedQueue<DataResponse>();
+                            _dataResponseQueueForIdentifier.putIfAbsent(req.identifier(), respBuffer);
+                            UploadResponder.respond(req, poll.getValue1(), _server._sendBuffer, respBuffer);
+                        }
                     }else
                     {
                         _log.debug(TAG + "Unexpected type of packet reveiced");

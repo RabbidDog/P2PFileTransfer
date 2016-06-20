@@ -1,16 +1,15 @@
-package torrent;
+package pft;
 
 import org.javatuples.Pair;
 import pft.frames.DataResponse;
-import pft.frames.Frame;
 import pft.frames.PartialUpoadRequest;
-import pft.frames.UploadRequest;
-import pft.operations.*;
+import pft.operations.ProcessDataResponsePacket;
+import pft.operations.ResendDataRequestPacket;
+import pft.operations.SendDataRequestPacket;
 
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -19,7 +18,7 @@ import java.util.concurrent.atomic.AtomicLong;
 /*handles upload requests. creates threads similar to Download handler for each request*/
 public class UploadResponder {
 
-    public static ExecutorService Respond(PartialUpoadRequest request, SocketAddress destination, ConcurrentLinkedQueue<Pair<ByteBuffer , SocketAddress >> sendBuffer, ConcurrentLinkedQueue<DataResponse> dataresponseBuffer)
+    public static ExecutorService respond(PartialUpoadRequest request, SocketAddress destination, ConcurrentLinkedQueue<Pair<ByteBuffer , SocketAddress >> sendBuffer, ConcurrentLinkedQueue<DataResponse> dataresponseBuffer)
     {
         ExecutorService executorService = Executors.newFixedThreadPool(3);
 

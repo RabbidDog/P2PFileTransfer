@@ -20,8 +20,8 @@ import pft.*;
 
 public class TorrentApplication {
 
-    private static String _logFilePath;
-    private static String _mainFolder;
+    public static String _logFilePath;
+    public static String _mainFolder;
 
 
     public static void main(String args[])

@@ -117,7 +117,7 @@ public class DownloadHandler implements RunnableFuture {
         }
         /*choose a chunk to download*/
         final BlockingQueue<Runnable> queue = new ArrayBlockingQueue<>(100);
-        ExecutorService executorService = new ThreadPoolExecutor(15, 15,
+            ExecutorService executorService = new ThreadPoolExecutor(15, 15,
                 0L, TimeUnit.MILLISECONDS, queue); //new requests when already queued 100, will be rejected. Execute 10 at a time
         boolean stillChunkDownLoadPossible =  true;
         do{
