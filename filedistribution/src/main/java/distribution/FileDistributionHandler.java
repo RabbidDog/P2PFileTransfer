@@ -109,7 +109,7 @@ public class FileDistributionHandler {
         _fileChunkInfo.chunkSize = sizeOfChunks;
         _fileChunkInfo.size = fileSize;
 
-        RandomAccessFile torrentFile = new RandomAccessFile(new File(path + "\\" + fileName + ".torrent"), "rw");
+        RandomAccessFile torrentFile = new RandomAccessFile(new File(path + fileName + ".torrent"), "rw");
         try{
             torrentFile.writeBytes(fileName + "\r\n");
                 torrentFile.write(fileSha, 0, 20);

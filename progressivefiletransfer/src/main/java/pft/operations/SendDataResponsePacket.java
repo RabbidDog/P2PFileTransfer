@@ -46,7 +46,7 @@ public class SendDataResponsePacket implements Runnable {
         _framer = new Framer();
         _sendBuffer = sendBuffer;
         _log = LogManager.getRootLogger();
-        TAG = "SendDataResponsePacket: FileName: "+fileManager.getFileName()+ " startoffset: " + startOffset + " identifier: "+identifier;
+        TAG = "SendDataResponsePacket: FileName: "+this.fileManager.getFileName()+ " startoffset: " + this.startOffset + " identifier: "+ this.identifier;
     }
     @Override
     public void run() {
@@ -54,7 +54,7 @@ public class SendDataResponsePacket implements Runnable {
         _log.debug(TAG  + "SendDataResponsePacket process started");
         for(;;)
         {
-            if((lastTimePacketsReceived - System.currentTimeMillis()) > 1000) //10sec
+            if((System.currentTimeMillis() - lastTimePacketsReceived) > 10000) //10sec
             {
                 _log.debug(TAG + "No request received in 10 sec. Closing...");
                 break;

@@ -14,6 +14,7 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.DatagramChannel;
+import java.util.Arrays;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -28,7 +29,7 @@ public class Server extends PftChannel{
         return _serverChannel;
     }
 
-    private DatagramChannel _serverChannel;
+    public DatagramChannel _serverChannel;
     public final ConcurrentLinkedQueue<Pair<ByteBuffer ,SocketAddress>> _sendBuffer;
     public final ConcurrentLinkedQueue<Pair<ByteBuffer, SocketAddress>> _receiveBuffer;
     private ExecutorService _execService = Executors.newFixedThreadPool(2);
@@ -140,16 +141,14 @@ public class Server extends PftChannel{
     @Override
     public void receive()
     {
-        try
-        {
-            ByteBuffer buffer = ByteBuffer.allocate(8096);
-            SocketAddress sockAddr = this._serverChannel.receive(buffer);
-            /*push data to reveice buffer for further processing*/
-            this._receiveBuffer.add(Pair.with( buffer,sockAddr));
-
-        }catch (IOException ioe)
-        {
-            _log.error(ioe.getMessage() + " " + ioe.getStackTrace());
+        ByteBuffer buf = ByteBuffer.allocate(8096);
+        try {
+            SocketAddress sockAddr = _serverChannel.receive(buf);
+            byte[] actual = Arrays.copyOfRange(buf.array(), 0, buf.position());
+            this._receiveBuffer.add(Pair.with( ByteBuffer.wrap(actual),sockAddr));
+            buf.clear();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 }

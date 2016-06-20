@@ -4,6 +4,7 @@ package pft;
  * Created by rabbiddog on 6/16/16.
  */
 
+import io.netty.buffer.ByteBuf;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.javatuples.Pair;
@@ -18,15 +19,13 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.lang.reflect.Array;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.DatagramChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
-import java.util.Iterator;
-import java.util.Properties;
-import java.util.Random;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
@@ -196,7 +195,13 @@ public class PacketService implements Runnable{
         int readyKeys = 0;
         Iterator _keysIterator = null;
         SelectionKey _currentKey = null;
-        while(true)
+
+        while (true)
+        {
+            _server.receive();
+        }
+
+        /*while(true)
         {
             try
             {
@@ -207,24 +212,25 @@ public class PacketService implements Runnable{
                 _log.error(ioe.getMessage() +  " " + ioe.getStackTrace());
             }
             /*if no events happened then continue*/
-            if(readyKeys>0)
+            /*if(readyKeys>0)
             {
+                _log.debug(TAG + "Selector key");
                 _keysIterator = _selector.selectedKeys().iterator();
                 while(_keysIterator.hasNext())
                 {
                     _currentKey = (SelectionKey)_keysIterator.next();
                     /*check if key is registered*/
-                    if(_currentKey.equals(_keys[0]))
+                   /* if(_currentKey.equals(_keys[0]))
                     {
                         _keysIterator.remove();
                         /*pass data to channel*/
 
-                        PftChannel ch = (PftChannel)_currentKey.attachment();
+                       /* PftChannel ch = (PftChannel)_currentKey.attachment();
                         ch.receive();
                     }
                 }
             }
-        }
+        }*/
 
 
     }
