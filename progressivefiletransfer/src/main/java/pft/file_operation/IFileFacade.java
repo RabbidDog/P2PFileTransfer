@@ -1,5 +1,9 @@
     package pft.file_operation;
 
+
+    import java.io.FileNotFoundException;
+    import java.io.IOException;
+    import java.io.RandomAccessFile;
     import java.io.File;
     import java.io.FileNotFoundException;
     import java.io.IOException;
@@ -25,6 +29,21 @@ public interface IFileFacade {
     public String getFileName();
     public boolean deleteFile();
     public boolean bufferedRead(long offset, long length, int chunkSize, ConcurrentHashMap<Long, byte[]> buffer);
+    public static long writeBytesToFile(String fileName, long offset, byte[] data)  {
+        try {
+            RandomAccessFile randomAccessFile = new RandomAccessFile(fileName, "rw");
+            randomAccessFile.seek(offset);
+            randomAccessFile.write(data);
+            randomAccessFile.close();
+            return data.length;
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            return 0;
+
+        }
+
+    }
         public static boolean bufferedRead(Path filePath, long offset, long length, int chunkSize, ConcurrentHashMap<Long, byte[]> buffer)
         {
             if(Files.notExists(filePath))
@@ -64,7 +83,5 @@ public interface IFileFacade {
                 return false;
             }
         }
-        public static long writeBytesToFile(String fileName, long offset, byte[] data){
-            return 0;
-        }
+
 }
