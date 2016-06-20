@@ -21,9 +21,9 @@ public class DataRequestMarshaller implements Marshaller<DataRequest> {
   private static final int LENGTH_LENGTH = 4;
   private static final int FILENAME_LENGTH = 256;
   private static final int SHA_LENGTH = 20;
-
+  private static final int CHUNK_SIZE = 4;
   private static final int LENGTH = OFFSET_LENGTH + LENGTH_LENGTH;
-  private static final int LENGTH_WITH_FILE_SHA = OFFSET_LENGTH + LENGTH_LENGTH + FILENAME_LENGTH + SHA_LENGTH;
+  private static final int LENGTH_WITH_FILE_SHA = OFFSET_LENGTH + LENGTH_LENGTH + FILENAME_LENGTH + SHA_LENGTH + CHUNK_SIZE;
 
 
   @Override public DataRequest decode(int identifier, byte[] data) {
@@ -58,8 +58,9 @@ public class DataRequestMarshaller implements Marshaller<DataRequest> {
         buffer.readBytes(sha1);
         long offset = buffer.readUnsignedInt();
         long length = buffer.readUnsignedInt();
+        long chunkSize = buffer.readUnsignedInt();
 
-        return new DataRequest(identifier, filename, sha1, offset, length);
+        return new DataRequest(identifier, filename, sha1, offset, length, chunkSize);
       } finally {
         if (buffer != null) {
           buffer.release();
@@ -101,6 +102,8 @@ public class DataRequestMarshaller implements Marshaller<DataRequest> {
         checkState(buffer.writerIndex() == FILENAME_LENGTH + SHA_LENGTH);
         buffer.writeInt((int) frame.offset());
         buffer.writeInt((int) frame.length());
+        buffer.writeInt((int) frame.chunkSize());
+
         byte[] data = new byte[LENGTH_WITH_FILE_SHA];
         buffer.readBytes(data);
         return data;

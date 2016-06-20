@@ -6,18 +6,20 @@ public class DataRequest extends Frame {
   private long length;
   private String fileName;
   private byte[] sha;
+  private long chunkSize;
 
   public DataRequest(int identifier, long offset, long length) {
     super(identifier);
     this.offset = offset;
     this.length = length;
   }
-  public DataRequest(int identifier,String fileName, byte[] sha, long offset, long length) {
+  public DataRequest(int identifier,String fileName, byte[] sha, long offset, long length, long chunkSize) {
     super(identifier);
     this.offset = offset;
     this.length = length;
     this.fileName = fileName;
     this.sha = sha;
+    this.chunkSize = chunkSize;
   }
 
   @Override public byte type() {
@@ -36,6 +38,9 @@ public class DataRequest extends Frame {
    }
   public byte[] sha(){
     return sha;
+  }
+  public long chunkSize(){
+    return chunkSize;
   }
   @Override
   public boolean equals(Object other) {
