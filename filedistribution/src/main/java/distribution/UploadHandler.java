@@ -1,4 +1,4 @@
-package torrent;
+package distribution;
 
 import entity.Chunk;
 import entity.FileChunkInfo;

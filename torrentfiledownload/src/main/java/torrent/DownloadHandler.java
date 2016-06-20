@@ -2,10 +2,12 @@ package torrent;
 
 import entity.Chunk;
 import entity.FileChunkInfo;
+import entity.Peer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import pft.Framer;
 import pft.frames.DataRequest;
+import pft.frames.DataResponse;
 import pft.frames.DownloadRequest;
 
 import java.net.InetAddress;
@@ -18,10 +20,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.javatuples.*;
 import pft.frames.Frame;
 import database.*;
+import pft.operations.ProcessDataResponsePacket;
+import pft.operations.ResendDataRequestPacket;
+import pft.operations.SendDataRequestPacket;
+
 /**
  * Created by ankur on 18.06.2016.
  */
@@ -36,10 +43,12 @@ public class DownloadHandler implements RunnableFuture {
     private FileChunkInfo _fFileChunkInfo;
     private Logger _log;
     private Random _rand;
+    private ConcurrentLinkedQueue<Pair<ByteBuffer ,SocketAddress>> _sendBuffer;
+    private ConcurrentHashMap<Integer, ConcurrentLinkedQueue<DataResponse>> _dataResponseQueueForIdentifier;
     private final String TAG = "DownloadHandler";
 
 
-    public DownloadHandler(String fileName, byte[] sha, Random rand)
+    public DownloadHandler(String fileName, byte[] sha, Random rand, ConcurrentLinkedQueue<Pair<ByteBuffer ,SocketAddress>> sendBuffer, ConcurrentHashMap<Integer, ConcurrentLinkedQueue<DataResponse>> dataResponseQueueForIdentifier)
     {
         this.fileName = fileName;
         this.sha = sha;
@@ -47,6 +56,8 @@ public class DownloadHandler implements RunnableFuture {
         this._log = LogManager.getRootLogger();
         this._db = MongoDBAccessor.getInstance();
         this._rand = rand;
+        this._sendBuffer = sendBuffer;
+        this._dataResponseQueueForIdentifier = dataResponseQueueForIdentifier;
     }
     /*call db each time this method is called so that updated information is received*/
     private List<Chunk> getChunkPeerHashMap()
@@ -132,6 +143,7 @@ public class DownloadHandler implements RunnableFuture {
             Chunk nextChunkToDownload = null;
             while (it.hasNext())
             {
+                nextChunkToDownload = null;
                 Chunk ch = (Chunk) it.next();
                 if(!ch.isDownloaded)
                 {
@@ -146,6 +158,29 @@ public class DownloadHandler implements RunnableFuture {
                 /*start download*/
                 /*unique identifier*/
                 int identifier = _rand.nextInt();
+                /*choose a peer*/
+                SocketAddress source;
+                Iterator itPeer = nextChunkToDownload.peerList.iterator();
+                if(itPeer.hasNext())
+                {
+                    Peer p = (Peer)itPeer.next();
+                    source = new InetSocketAddress(p.address, p.port);
+                }
+                else
+                {
+                    _log.debug(TAG + " No peers found for chunk "+ nextChunkToDownload.offset);
+                    continue;
+                }
+
+                ConcurrentHashMap<Long, Pair< ByteBuffer, SocketAddress >> pendingPackets = new ConcurrentHashMap<Long, Pair< ByteBuffer, SocketAddress >>();
+                ConcurrentLinkedQueue<DataResponse> dataRespBuff = new ConcurrentLinkedQueue<DataResponse>();
+                _dataResponseQueueForIdentifier.putIfAbsent(identifier, dataRespBuff);
+                AtomicLong currentOffset = new AtomicLong(0);
+                AtomicLong highestOffsetReceived = new AtomicLong(0);
+                Future sender =  executorService.submit(new SendDataRequestPacket(identifier, _fFileChunkInfo.FileName, _fFileChunkInfo.fileHash, nextChunkToDownload.offset, nextChunkToDownload.length, source, pendingPackets, _sendBuffer, currentOffset));
+                Future resender = executorService.submit(new ResendDataRequestPacket(identifier, _fFileChunkInfo.FileName, source, currentOffset, nextChunkToDownload.length, highestOffsetReceived, pendingPackets,  _sendBuffer));
+                Future processor = executorService.submit(new ProcessDataResponsePacket(identifier, _fFileChunkInfo.FileName, currentOffset, nextChunkToDownload.length, highestOffsetReceived, dataRespBuff, pendingPackets,source, _sendBuffer));
+
                 //executorService.submit();
             }
             else {

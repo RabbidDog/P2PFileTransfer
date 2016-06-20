@@ -18,6 +18,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import org.javatuples.*;
+import pft.frames.Frame;
 
 public class Client extends PftChannel{
 
@@ -65,23 +66,10 @@ public class Client extends PftChannel{
     }
 
     @Override
-    public void spin() {
+    public void spin(ConcurrentLinkedQueue<Pair<Frame, SocketAddress>> allreceivedframe) {
 
-        Future processIncoming = _execService.submit(new Runnable() {
-
-            @Override
-            public void run() {
-
-            }
-        });
-
-        Future processOutgoing = _execService.submit(new Runnable() {
-            @Override
-            public void run() {
-
-            }
-        });
     }
+
 
     @Override
     public void stop() {

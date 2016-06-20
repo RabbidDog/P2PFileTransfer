@@ -29,7 +29,7 @@ public class TorrentApplication {
         /*set up logging*/
         TorrentApplication.loadSettingsFile();
         TorrentApplication.setuplogging();
-        PacketService pckService = new PacketService();
+        PacketService pckService = new PacketService(_mainFolder);
         pckService.Start();
 
         //pckService.Stop();

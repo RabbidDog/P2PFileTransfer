@@ -32,8 +32,9 @@ public class ProcessDataResponsePacket implements Callable<Long>{
     private Framer framer;
     private SocketAddress destination;
     private ConcurrentLinkedQueue<Pair<ByteBuffer ,SocketAddress>> sendBuffer;
+    private IFileFacade _fileManager;
 
-    public ProcessDataResponsePacket(int identifier, String fileName, AtomicLong currentOffset, long length, AtomicLong highestOffsetReceived, ConcurrentLinkedQueue<DataResponse> incomingFrames, ConcurrentHashMap<Long, Pair<ByteBuffer ,SocketAddress>> pendingPackets,SocketAddress destination, ConcurrentLinkedQueue<Pair<ByteBuffer ,SocketAddress>> sendBuffer)
+    public ProcessDataResponsePacket(int identifier, String fileName, AtomicLong currentOffset, long length, AtomicLong highestOffsetReceived, ConcurrentLinkedQueue<DataResponse> incomingFrames, ConcurrentHashMap<Long, Pair<ByteBuffer ,SocketAddress>> pendingPackets,SocketAddress destination, ConcurrentLinkedQueue<Pair<ByteBuffer ,SocketAddress>> sendBuffer, IFileFacade fileManager)
     {
         this.identifier = identifier;
         this.fileName = fileName;
@@ -47,6 +48,7 @@ public class ProcessDataResponsePacket implements Callable<Long>{
         _log = LogManager.getRootLogger();
         TAG = "FileName: "+fileName+ " identifier: " + identifier;
         framer = new Framer();
+        this._fileManager = fileManager;
     }
 
     @Override
@@ -100,7 +102,8 @@ public class ProcessDataResponsePacket implements Callable<Long>{
                             }
                             //delegate writing to file to a seperate thread
                             //long writePosition = fileManager.writeFromPosition(response.offset(), response.length(), response.data());
-                            long writePosition = IFileFacade.writeBytesToFile(fileName, response.offset(), response.data());
+                            long writePosition = _fileManager.writeFromPosition(response.offset(), response.length(), response.data());
+                            //long writePosition = IFileFacade.writeBytesToFile(fileName, response.offset(), response.data());
 
                             _log.debug(TAG+" Data Response received for "+response.offset());
                             if(writePosition == (response.offset() + response.data().length)) /*data was successfully written*/
@@ -112,6 +115,7 @@ public class ProcessDataResponsePacket implements Callable<Long>{
                                     ByteBuffer terminationBuffer = ByteBuffer.wrap(framer.frame(new DataRequest(identifier, currentOffset.get() + 1, length)));
                                     sendBuffer.add(Pair.with(terminationBuffer, destination));
                                     /*update DB*/
+
                                     /*update tracker*/
                                     return length;
                                 }

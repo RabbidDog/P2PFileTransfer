@@ -6,7 +6,12 @@ import entity.FileChunkInfo;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.List;
+import java.util.Properties;
 
 import org.mongodb.morphia.*;
 import org.mongodb.morphia.query.Query;
@@ -27,6 +32,7 @@ public class MongoDBAccessor implements IDataBase{
     private final Morphia _morphia;
     private final Datastore _datastore;
     private static MongoDBAccessor ourInstance;
+    private String peerName;
 
     public static MongoDBAccessor getInstance() {
         return ourInstance;
@@ -34,12 +40,13 @@ public class MongoDBAccessor implements IDataBase{
     public static MongoDBAccessor getInstance(String peerName){
         if(null == ourInstance)
         {
-            ourInstance = new MongoDBAccessor(peerName);
+            ourInstance = new MongoDBAccessor();
         }
         return ourInstance;
     }
 
-    private MongoDBAccessor(String peerName) {
+    private MongoDBAccessor() {
+        loadConfig();
         _log = LogManager.getRootLogger();
         _morphia = new Morphia();
         _morphia.mapPackage("entity");
@@ -108,5 +115,23 @@ public class MongoDBAccessor implements IDataBase{
     @Override
     public List<Chunk> getChunksByDownloadStatus(String fileName, boolean status) {
         throw new NotImplementedException();
+    }
+
+    private void loadConfig()
+    {
+        File configFile = new File("config.properties");
+
+        try {
+            FileReader reader = new FileReader(configFile);
+            Properties props = new Properties();
+            props.load(reader);
+            peerName= props.getProperty("peerIdentifier");
+            reader.close();
+
+        } catch (FileNotFoundException ex) {
+            System.out.print("Error in reading Configuration file while searching for path to Log file");
+        } catch (IOException ex) {
+            System.out.print("Error in reading Configuration file while searching for path to Log file");
+        }
     }
 }

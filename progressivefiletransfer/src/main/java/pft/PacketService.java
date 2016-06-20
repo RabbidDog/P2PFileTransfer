@@ -50,6 +50,7 @@ public class PacketService {
     public ConcurrentHashMap<String, IFileFacade> _fileManagerMap;
     private Random _rand;
     private final String _mainFolder;
+    private IDatabase
 
     public PacketService(String mainFolder)
     {
@@ -169,7 +170,18 @@ public class PacketService {
                             _log.debug(TAG + " New PartialUpoadRequest with identifier" + req.identifier() + " reeived recognized");
                             ConcurrentLinkedQueue<DataResponse> respBuffer = new ConcurrentLinkedQueue<DataResponse>();
                             _dataResponseQueueForIdentifier.putIfAbsent(req.identifier(), respBuffer);
-                            UploadResponder.respond(req, poll.getValue1(), _server._sendBuffer, respBuffer);
+                            IFileFacade fm;
+                            if(_fileManagerMap.containsKey(req.fileName()))
+                            {
+                                _log.debug(TAG + " Existing Filemanager not found. Create new one");
+                                fm = new PftFileManager(_mainFolder+req.fileName());
+                                _fileManagerMap.putIfAbsent(req.fileName(), fm);
+                            }
+                            else{
+                                _log.debug(TAG + " Existing Filemanager found");
+                                fm = _fileManagerMap.get(_mainFolder+req.fileName());
+                            }
+                            UploadResponder.respond(req, poll.getValue1(), _server._sendBuffer, respBuffer, fm);
                         }
                     }else
                     {

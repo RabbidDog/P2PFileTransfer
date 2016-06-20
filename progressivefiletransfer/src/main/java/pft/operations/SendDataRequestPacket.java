@@ -33,8 +33,9 @@ public class SendDataRequestPacket implements Callable<Long> {
     private Framer _framer;
     private final Logger _log;
     private String TAG;
+    private byte[] _hashCode;
 
-    public SendDataRequestPacket(int identifier, String fileName, long startOffset, long length, SocketAddress destination, ConcurrentHashMap<Long, Pair<ByteBuffer ,SocketAddress>> pendingPackets, ConcurrentLinkedQueue<Pair<ByteBuffer ,SocketAddress>> sendBuffer, AtomicLong currentOffset)
+    public SendDataRequestPacket(int identifier, String fileName, byte[] hashCode, long startOffset, long length, SocketAddress destination, ConcurrentHashMap<Long, Pair<ByteBuffer ,SocketAddress>> pendingPackets, ConcurrentLinkedQueue<Pair<ByteBuffer ,SocketAddress>> sendBuffer, AtomicLong currentOffset)
     {
         this.identifier = identifier;
         this.fileName = fileName;
@@ -46,6 +47,7 @@ public class SendDataRequestPacket implements Callable<Long> {
         _framer = new Framer();
         _sendBuffer = sendBuffer;
         _log = LogManager.getRootLogger();
+        _hashCode = hashCode;
         TAG = "SendDataRequestPacket : FileName: "+fileName+ " offset: " + startOffset + " identifier: "+identifier;
     }
     @Override
@@ -72,7 +74,7 @@ public class SendDataRequestPacket implements Callable<Long> {
                         boolean isLessThanDefaultSize = ((length - currentOffset.get()) / defaultPacketSize) == 0 ;
                         if(isLessThanDefaultSize)
                         {
-                            DataRequest request = new DataRequest(identifier, (int)currentOffset.get(), (length - currentOffset.get()));
+                            DataRequest request = new DataRequest(identifier, fileName, _hashCode, (int)currentOffset.get(), (length - currentOffset.get()), length);
 
                             _log.debug(TAG + " Send Request for last packet");
                             packetBuffer = ByteBuffer.wrap(_framer.frame(request));
@@ -87,7 +89,7 @@ public class SendDataRequestPacket implements Callable<Long> {
                             long remainingPackets = ((length - currentOffset.get()) / defaultPacketSize) >=32 ? 32 : ((length - currentOffset.get()) / defaultPacketSize);
 
                             long packetsToSend = remainingWindow>remainingPackets ? remainingPackets:remainingWindow;
-                            DataRequest request = new DataRequest(identifier, currentOffset.get(), defaultPacketSize*packetsToSend);
+                            DataRequest request = new DataRequest(identifier, fileName, _hashCode, currentOffset.get(), defaultPacketSize*packetsToSend, length);
                             packetBuffer = ByteBuffer.wrap(_framer.frame(request));
                             Pair<ByteBuffer ,SocketAddress> p = Pair.with(packetBuffer, destination);
                             _sendBuffer.add(p);
