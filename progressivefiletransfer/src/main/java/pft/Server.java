@@ -54,7 +54,7 @@ public class Server extends PftChannel{
         }
     }
 
-    public void spin()
+    public void spin(ConcurrentLinkedQueue<Pair<Frame,SocketAddress>> allreceivedframe)
     {
          _processIncoming = _execService.submit(new Runnable() {
 
@@ -75,10 +75,10 @@ public class Server extends PftChannel{
                             continue;
                         }
                         /*if there is a packet to prcess*/
-                        byte[] payLoad = _receiveBuffer.poll().getValue0().array();
+                        Pair<ByteBuffer, SocketAddress> poll = _receiveBuffer.poll();
+                        byte[] payLoad = poll.getValue0().array();
                         Frame f = _deframer.deframe(payLoad);
-                        /*Expecting UploadPartial OR DataRequest OR DataResponse
-                        * Push to corresponding collection depending on Identifier*/
+                        allreceivedframe.add(Pair.with(f, poll.getValue1()));
 
                     }catch(InterruptedException ie)
                     {

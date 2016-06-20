@@ -4,11 +4,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.javatuples.Pair;
 import pft.file_operation.IFileFacade;
-import pft.frames.DataResponse;
-import pft.frames.Frame;
+import pft.frames.*;
 import pft.Framer;
-import pft.frames.Status;
-import pft.frames.TerminationRequest;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
@@ -24,10 +21,10 @@ public class ProcessDataResponsePacket implements Callable<Long>{
 
     private  int identifier;
     private String fileName;
-    private volatile long currentOffset;
+    private AtomicLong currentOffset;
     private volatile AtomicLong highestOffsetReceived;
     private  long length;
-    private  ConcurrentLinkedQueue<Frame> incomingFrames;
+    private  ConcurrentLinkedQueue<DataResponse> incomingFrames;
     private ConcurrentHashMap<Long, Pair<ByteBuffer ,SocketAddress>> pendingPackets;
     private final Logger _log;
     private String TAG;
@@ -36,7 +33,7 @@ public class ProcessDataResponsePacket implements Callable<Long>{
     private SocketAddress destination;
     private ConcurrentLinkedQueue<Pair<ByteBuffer ,SocketAddress>> sendBuffer;
 
-    public ProcessDataResponsePacket(int identifier, String fileName, long currentOffset, long length, AtomicLong highestOffsetReceived, ConcurrentLinkedQueue<Frame> incomingFrames, ConcurrentHashMap<Long, Pair<ByteBuffer ,SocketAddress>> pendingPackets,SocketAddress destination, ConcurrentLinkedQueue<Pair<ByteBuffer ,SocketAddress>> sendBuffer)
+    public ProcessDataResponsePacket(int identifier, String fileName, AtomicLong currentOffset, long length, AtomicLong highestOffsetReceived, ConcurrentLinkedQueue<DataResponse> incomingFrames, ConcurrentHashMap<Long, Pair<ByteBuffer ,SocketAddress>> pendingPackets,SocketAddress destination, ConcurrentLinkedQueue<Pair<ByteBuffer ,SocketAddress>> sendBuffer)
     {
         this.identifier = identifier;
         this.fileName = fileName;
@@ -67,16 +64,15 @@ public class ProcessDataResponsePacket implements Callable<Long>{
             _log.debug(TAG + " will process packet now");
             try
             {
-                Frame f = incomingFrames.poll();
-                if(null == f)
+                DataResponse response = incomingFrames.poll();
+                if(null == response)
                 {
                     Thread.sleep(10);
                     continue;
                 }
                 _log.debug(TAG + " incomingFrames poll returned non null");
-                if(f instanceof DataResponse)
-                {
-                    DataResponse response = (DataResponse)f;
+                /*if(f instanceof DataResponse)
+                {*/
                     if(response.identifier() == identifier)
                     {
                         /* remove Data request from resend
@@ -109,12 +105,14 @@ public class ProcessDataResponsePacket implements Callable<Long>{
                             _log.debug(TAG+" Data Response received for "+response.offset());
                             if(writePosition == (response.offset() + response.data().length)) /*data was successfully written*/
                             {
-                                if(checkToShutExecutor && currentOffset == length)
+                                if(checkToShutExecutor && currentOffset.get() == length)
                                 {
                                     _log.debug(TAG + "Current offset is file size. Will stop precess");
-                                    /*send termination request*/
-                                    ByteBuffer terminationBuffer = ByteBuffer.wrap(framer.frame(new TerminationRequest(identifier, Status.OK)));
+                                    /*send request for offset greater than chuck positioo request*/
+                                    ByteBuffer terminationBuffer = ByteBuffer.wrap(framer.frame(new DataRequest(identifier, currentOffset.get() + 1, length)));
                                     sendBuffer.add(Pair.with(terminationBuffer, destination));
+                                    /*update DB*/
+                                    /*update tracker*/
                                     return length;
                                 }
                             }
@@ -128,8 +126,8 @@ public class ProcessDataResponsePacket implements Callable<Long>{
                     {
                         _log.debug("Data Response with incorrect identifier was received. "+"Expected "+identifier+". "+"Received "+ response.identifier());
                     }
-                }
-                else if(f instanceof TerminationRequest)
+                //}
+                /*else if(f instanceof TerminationRequest)
                 {
                     //write remaining packets to the file system and close this thread
                     TerminationRequest terminationRequest = (TerminationRequest) f;
@@ -146,7 +144,7 @@ public class ProcessDataResponsePacket implements Callable<Long>{
                 else
                 {
                     _log.debug(TAG +"Received packet is neither dataresponse nor terminaton");
-                }
+                }*/
             }
             catch (InterruptedException iex)
             {
@@ -156,6 +154,6 @@ public class ProcessDataResponsePacket implements Callable<Long>{
         }
 
         _log.debug(TAG + "For loop ended for processPacketFuture");
-        return currentOffset;
+        return currentOffset.get();
     }
 }

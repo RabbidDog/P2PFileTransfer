@@ -21,12 +21,13 @@ import pft.*;
 public class TorrentApplication {
 
     private static String _logFilePath;
+    private static String _mainFolder;
 
 
     public static void main(String args[])
     {
         /*set up logging*/
-        TorrentApplication.loadLogFile();
+        TorrentApplication.loadSettingsFile();
         TorrentApplication.setuplogging();
         PacketService pckService = new PacketService();
         pckService.Start();
@@ -35,7 +36,7 @@ public class TorrentApplication {
     }
 
 
-    private static void loadLogFile()
+    private static void loadSettingsFile()
     {
         File configFile = new File("config.properties");
 
@@ -44,6 +45,7 @@ public class TorrentApplication {
             Properties props = new Properties();
             props.load(reader);
             _logFilePath= props.getProperty("logfile");
+            _mainFolder = props.getProperty("pathServer");
             reader.close();
 
         } catch (FileNotFoundException ex) {

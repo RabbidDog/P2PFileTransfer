@@ -12,6 +12,7 @@ import pft.frames.DataRequest;
 import pft.frames.PartialUpoadRequest;
 import pft.operations.SendDataResponsePacket;
 
+import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.util.Iterator;
@@ -21,7 +22,7 @@ import java.util.concurrent.*;
 /**
  * Created by rabbiddog on 6/19/16.
  */
-/*handles uploading files for each file*/
+/*handles uploading files to peers for each file*/
 public class UploadHandler {
 
     private FileChunkInfo _fileChunkInfo;
@@ -71,14 +72,15 @@ public class UploadHandler {
             while (it.hasNext())
             {
                 Peer p = (Peer)it.next();
+                SocketAddress destination = new InetSocketAddress(p.address, p.port);
                 int identifier = _rand.nextInt();
                 PartialUpoadRequest req = new PartialUpoadRequest(identifier, _fileChunkInfo.FileName, _fileChunkInfo.size, _fileChunkInfo.fileHash, ch.offset, _fileChunkInfo.chunkSize);
                 /*create buffer for this request*/
                 ConcurrentLinkedQueue<DataRequest> dataReqBuffer = new ConcurrentLinkedQueue<DataRequest>();
                 _dataRequestQueueForIdentifier.putIfAbsent(identifier, dataReqBuffer);
                 /*start a thread to process the datarequests*/
-                //Runnable worker = new SendDataResponsePacket(identifier, _fileManager, ch.offset, ch., SocketAddress destination, ConcurrentLinkedQueue<Pair<ByteBuffer ,SocketAddress>> sendBuffer, ConcurrentHashMap<Long, byte[]> bufferedFileData)
-
+                Runnable worker = new SendDataResponsePacket(identifier, _fileManager, ch.offset, ch.length, destination, _sendBuffer, _bufferedFileData, dataReqBuffer);
+                executor.execute(worker);
             }
         }
     }

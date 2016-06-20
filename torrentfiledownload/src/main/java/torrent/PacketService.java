@@ -5,15 +5,19 @@ package torrent;
  */
 import org.apache.logging.log4j.*;
 
+import org.javatuples.Pair;
 import pft.*;
+import pft.file_operation.IFileFacade;
 import pft.frames.DataRequest;
 import pft.frames.DataResponse;
+import pft.frames.Frame;
 import pft.frames.PartialUpoadRequest;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.DatagramChannel;
 import java.nio.channels.SelectionKey;
@@ -23,6 +27,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class PacketService {
     private Logger _log;
@@ -35,15 +40,23 @@ public class PacketService {
     private SelectionKey[] _keys; //size:2 key0 for server. key1 for client
     private final String TAG = "PacketService ";
     private volatile ConcurrentHashMap<Integer, ExecutorService> _chunkToThreadMap;
-    private ConcurrentHashMap<Integer, ConcurrentLinkedQueue<DataRequest>> _dataRequestQueueForIdentifier; //will be used by upload processes
-    private ConcurrentHashMap<Integer, ConcurrentLinkedQueue<DataResponse>> _dataResponseQueueForIdentifier; //will be used by download processes
-    private ConcurrentLinkedQueue<PartialUpoadRequest> _incomingUploadRequests; //new upload requests;
+    public ConcurrentHashMap<Integer, ConcurrentLinkedQueue<DataRequest>> _dataRequestQueueForIdentifier; //will be used by upload processes
+    public ConcurrentHashMap<Integer, ConcurrentLinkedQueue<DataResponse>> _dataResponseQueueForIdentifier; //will be used by download processes
+    public ConcurrentLinkedQueue<PartialUpoadRequest> _incomingUploadRequests; //new upload requests;
+    public ConcurrentLinkedQueue<Pair<Frame,SocketAddress>> _allreceivedframe;
+    public ConcurrentHashMap<String, IFileFacade> _fileManagerMap;
     private Random _rand;
 
     public PacketService()
     {
         _log = LogManager.getRootLogger();
         loadConfiguration();
+        /*create receive buffer by Identifer, where processes can register their buffer*/
+        _dataRequestQueueForIdentifier = new ConcurrentHashMap<Integer, ConcurrentLinkedQueue<DataRequest>> ();
+        _dataResponseQueueForIdentifier = new ConcurrentHashMap<Integer, ConcurrentLinkedQueue<DataResponse>>();
+        _incomingUploadRequests = new ConcurrentLinkedQueue<PartialUpoadRequest>();
+        _allreceivedframe = new ConcurrentLinkedQueue<Pair<Frame,SocketAddress>>();
+        _fileManagerMap = new ConcurrentHashMap<String, IFileFacade> ();
         _server = new Server(_serverListenPort);
         //_client = new Client(_clientPort);
 
@@ -54,6 +67,7 @@ public class PacketService {
 
     public void Start()
     {
+
         /*Selector service*/
         try
         {
@@ -71,7 +85,65 @@ public class PacketService {
             _log.error(TAG + ioe.getMessage() + " " + ioe.getStackTrace());
         }
         ByteBuffer packet = ByteBuffer.allocate(MAX_PACKET);
-        //spin
+        //spin server
+        _server.spin(_allreceivedframe);
+        //thread to process incoming requests
+        ExecutorService exector = Executors.newFixedThreadPool(5); //only one is required
+        exector.execute(new Runnable() {
+            @Override
+            public void run() {
+                for(;;)
+                {
+                    if(Thread.currentThread().interrupted())
+                    {
+                        _log.debug(TAG + "Polling of receving packets will stop ");
+                        break;
+                    }
+                    Pair<Frame, SocketAddress> poll = _allreceivedframe.poll();
+                    if(null == poll)
+                        continue;
+                    Frame f = poll.getValue0();
+                    if(f instanceof DataRequest)
+                    {
+                        /*if queue not present then this is a new download request
+                        * request must have identifer, file name*/
+                        DataRequest req = (DataRequest) f;
+                        if(_dataRequestQueueForIdentifier.containsKey(req.identifier()))
+                        {
+
+                        }else
+                        {
+                            if(req.identifier() == 0)
+                            {
+                                _log.debug(TAG + "New Datarequest with identifier 0. Will not process");
+                                continue;
+                            }
+                            ConcurrentLinkedQueue<DataRequest> reqBuffer = new ConcurrentLinkedQueue<DataRequest>();
+                            _dataRequestQueueForIdentifier.putIfAbsent(req.identifier(), reqBuffer);
+                            IFileFacade fm;
+                            if(_fileManagerMap.containsKey(req.fileName()))
+                            {
+                                
+                            }
+                            DownloadResponder.respond(req, poll.getValue1(), _server._sendBuffer, reqBuffer, )
+                        }
+
+                    }
+                    else if(f instanceof DataResponse)
+                    {
+
+                    }else if(f instanceof PartialUpoadRequest)
+                    {
+
+                    }else
+                    {
+                        _log.debug(TAG + "Unexpected type of packet reveiced");
+                    }
+                }
+            }
+        });
+
+
         int readyKeys = 0;
         Iterator _keysIterator = null;
         SelectionKey _currentKey = null;
@@ -105,7 +177,7 @@ public class PacketService {
             }
         }
 
-        /*create receive buffer by Identifer, where processes can register their buffer*/
+
     }
 
     public void Stop()
