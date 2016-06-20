@@ -28,7 +28,8 @@ public class PftApplication {
 
         /*currently running only as a listner*/
         PacketService pckService = new PacketService(mainFolder);
-        pckService.Start();
+        Thread th = new Thread(pckService);
+        th.start();
     }
 
     private static void loadLogFile()

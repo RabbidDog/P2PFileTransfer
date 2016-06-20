@@ -30,7 +30,8 @@ public class TorrentApplication {
         TorrentApplication.loadSettingsFile();
         TorrentApplication.setuplogging();
         PacketService pckService = new PacketService(_mainFolder);
-        pckService.Start();
+        Thread th = new Thread(pckService);
+        th.start();
 
         //pckService.Stop();
     }

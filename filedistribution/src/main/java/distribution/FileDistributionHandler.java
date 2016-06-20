@@ -78,7 +78,8 @@ public class FileDistributionHandler {
     public void startDistribution() throws IOException {
 
         PacketService pckService = new PacketService(FileDistributionApplication.mainFolder);
-        pckService.Start();
+        Thread th = new Thread(pckService);
+        th.start();
         Random rand = new Random();
         UploadHandler uploadHandler = new UploadHandler(_fileChunkInfo, FileDistributionApplication.mainFolder+fileName, pckService._server._sendBuffer, rand, pckService._dataRequestQueueForIdentifier);
         uploadHandler.startUpload();
@@ -103,11 +104,15 @@ public class FileDistributionHandler {
             peerMap.putIfAbsent(i, p);
             i++;
         }
+        _fileChunkInfo.chunkInfo = new ArrayList<Chunk>();
+        _fileChunkInfo.chunkCount = numberOfChunks;
+        _fileChunkInfo.chunkSize = sizeOfChunks;
+        _fileChunkInfo.size = fileSize;
 
         RandomAccessFile torrentFile = new RandomAccessFile(new File(path + "\\" + fileName + ".torrent"), "rw");
         try{
             torrentFile.writeBytes(fileName + "\r\n");
-            torrentFile.write(fileSha, 0, 20);
+                torrentFile.write(fileSha, 0, 20);
             torrentFile.writeBytes("\r\n");
             torrentFile.writeBytes(fileSize + "\r\n");
             torrentFile.writeBytes(Integer.toString(numberOfChunks) + "\r\n");
@@ -124,6 +129,10 @@ public class FileDistributionHandler {
                 ch.length = sizeOfChunks;
                 ch.isDownloaded = false;
                 ch.peerList = new ArrayList<>();
+                if(i == (numberOfChunks -1))
+                {
+                    ch.length = fileSize - offset;
+                }
 
                 torrentFile.writeBytes(Long.toString(offset)+" ");
                 torrentFile.writeBytes(Integer.toString(peer_count)+" ");

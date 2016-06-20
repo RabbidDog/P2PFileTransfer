@@ -18,5 +18,12 @@ dependencies {
     compile 'org.javatuples:javatuples:1.2'
     compile project(':database')
 }
-
+task fatJar(type: Jar) {
+    manifest{
+        attributes 'Main-Class':'pft.PftApplication'
+    }
+    baseName = 'pft'
+    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+    with jar
+}
 

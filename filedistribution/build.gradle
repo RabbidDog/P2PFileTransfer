@@ -20,3 +20,12 @@ dependencies {
     compile project(':database')
     compile project(':entity')
 }
+
+task fatJar(type: Jar) {
+    manifest{
+        attributes 'Main-Class':'distribution.FileDistributionApplication'
+    }
+    baseName = 'distribution'
+    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+    with jar
+}

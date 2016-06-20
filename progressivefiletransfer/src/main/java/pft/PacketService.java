@@ -32,7 +32,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class PacketService {
+public class PacketService implements Runnable{
     private Logger _log;
     public Server _server;
     //private Client _client;
@@ -62,7 +62,7 @@ public class PacketService {
         _incomingUploadRequests = new ConcurrentLinkedQueue<PartialUpoadRequest>();
         _allreceivedframe = new ConcurrentLinkedQueue<Pair<Frame,SocketAddress>>();
         _fileManagerMap = new ConcurrentHashMap<String, IFileFacade> ();
-        _server = new Server(_serverListenPort);
+            _server = new Server(_serverListenPort);
         _mainFolder = mainFolder;
         //_client = new Client(_clientPort);
 
@@ -71,7 +71,8 @@ public class PacketService {
         _rand = new Random();
     }
 
-    public void Start()
+    @Override
+    public void run()
     {
 
         /*Selector service*/
@@ -253,8 +254,8 @@ public class PacketService {
             FileReader reader = new FileReader(configFile);
             Properties props = new Properties();
             props.load(reader);
-            _serverListenPort= Integer.parseInt(props.getProperty("serverPort"));
-            _clientPort = Integer.parseInt(props.getProperty("clientPort"));
+            _serverListenPort = Integer.parseInt( props.getProperty("hostname").split(":")[1]);
+
             reader.close();
 
         } catch (FileNotFoundException ex) {

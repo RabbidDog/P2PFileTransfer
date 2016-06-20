@@ -22,3 +22,11 @@ dependencies {
     compile project(':database')
     compile project(':entity')
 }
+task fatJar(type: Jar) {
+    manifest{
+        attributes 'Main-Class':'torrent.TorrentApplication'
+    }
+    baseName = 'torrent'
+    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+    with jar
+}

@@ -52,8 +52,8 @@ public class FileDistributionApplication {
         try {
             fileDistributionHandler = new FileDistributionHandler(fileName,hostList);
             fileDistributionHandler.setDistributionParameters();
-            fileDistributionHandler.startDistribution();
             fileDistributionHandler.generateTorrentFile();
+            fileDistributionHandler.startDistribution();
 
         } catch (FileNotFoundException e) {
             e.printStackTrace();
@@ -85,7 +85,7 @@ public class FileDistributionApplication {
     }
     private static String trimHost(String arg) {
         // System.out.println("Substring: " + arg.substring(0,(arg.length() -1)));
-        if(arg.substring(0,9).equals("localhost")) return "localhost" + arg.substring(10, arg.length());
+        if(arg.substring(0,9).equals("localhost")) return "localhost:" + arg.substring(10, arg.length());
         return arg;
     }
     private static boolean isHost(String arg) {

@@ -22,7 +22,6 @@ public class PartialUpoadRequest extends Frame {
         checkArgument(size > 0);
         this.sha1 = sha1;
         this.offset = offset;
-        checkArgument(offset > 0);
         this.length = length;
         checkArgument(length > 0);
     }

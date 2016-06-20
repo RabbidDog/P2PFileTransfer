@@ -6,6 +6,7 @@ import entity.Peer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.javatuples.Pair;
+import pft.Framer;
 import pft.file_operation.IFileFacade;
 import pft.file_operation.PftFileManager;
 import pft.frames.DataRequest;
@@ -33,6 +34,7 @@ public class UploadHandler {
     private final Logger _log;
     private final String TAG = "UploadHandler : ";
     ConcurrentHashMap<Integer, ConcurrentLinkedQueue<DataRequest>> _dataRequestQueueForIdentifier;
+    private Framer _framer;
 
     public UploadHandler(FileChunkInfo fileChunkInfo, String filePath, ConcurrentLinkedQueue<Pair<ByteBuffer ,SocketAddress>> sendBuffer, Random rand, ConcurrentHashMap<Integer, ConcurrentLinkedQueue<DataRequest>> dataRequestQueueForIdentifier)
     {
@@ -42,6 +44,8 @@ public class UploadHandler {
         this._fileManager = new PftFileManager(filePath);
         _log = LogManager.getRootLogger();
         _dataRequestQueueForIdentifier = dataRequestQueueForIdentifier;
+        _framer = new Framer();
+        _rand = rand;
     }
 
     public void startUpload()
@@ -74,7 +78,9 @@ public class UploadHandler {
                 Peer p = (Peer)it.next();
                 SocketAddress destination = new InetSocketAddress(p.address, p.port);
                 int identifier = _rand.nextInt();
-                PartialUpoadRequest req = new PartialUpoadRequest(identifier, _fileChunkInfo.FileName, _fileChunkInfo.size, _fileChunkInfo.fileHash, ch.offset, _fileChunkInfo.chunkSize);
+                PartialUpoadRequest partialUpoadRequest = new PartialUpoadRequest(identifier, _fileChunkInfo.FileName, _fileChunkInfo.size, _fileChunkInfo.fileHash, ch.offset, _fileChunkInfo.chunkSize);
+                ByteBuffer req = ByteBuffer.wrap(_framer.frame(partialUpoadRequest));
+                _sendBuffer.add(Pair.with(req, destination));
                 /*create buffer for this request*/
                 ConcurrentLinkedQueue<DataRequest> dataReqBuffer = new ConcurrentLinkedQueue<DataRequest>();
                 _dataRequestQueueForIdentifier.putIfAbsent(identifier, dataReqBuffer);
