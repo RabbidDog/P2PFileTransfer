@@ -34,8 +34,8 @@ import java.util.concurrent.Executors;
 
 public class PacketService {
     private Logger _log;
-    private Server _server;
-    private Client _client;
+    public Server _server;
+    //private Client _client;
     private int _serverListenPort;
     private int _clientPort;
     private Selector _selector;
@@ -50,7 +50,7 @@ public class PacketService {
     public ConcurrentHashMap<String, IFileFacade> _fileManagerMap;
     private Random _rand;
     private final String _mainFolder;
-    private IDatabase
+
 
     public PacketService(String mainFolder)
     {
@@ -94,7 +94,7 @@ public class PacketService {
         //spin server
         _server.spin(_allreceivedframe);
         //thread to process incoming requests
-        ExecutorService exector = Executors.newFixedThreadPool(5); //only one is required
+        ExecutorService exector = Executors.newFixedThreadPool(2); //only one is required
         exector.execute(new Runnable() {
             @Override
             public void run() {

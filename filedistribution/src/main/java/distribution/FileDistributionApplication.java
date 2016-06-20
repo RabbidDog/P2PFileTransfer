@@ -25,7 +25,8 @@ public class FileDistributionApplication {
 
 
     private static String fileName;
-    private static String _logFilePath;
+    public static String mainFolder;
+    public static String logFilePath;
     private static Logger _log;
 
     private static LinkedList<String> hostList = new LinkedList<String>();
@@ -101,7 +102,8 @@ public class FileDistributionApplication {
             FileReader reader = new FileReader(configFile);
             Properties props = new Properties();
             props.load(reader);
-            _logFilePath= props.getProperty("logfile");
+            logFilePath= props.getProperty("logfile");
+            mainFolder = props.getProperty("pathServer");
             reader.close();
 
         } catch (FileNotFoundException ex) {
@@ -130,8 +132,8 @@ public class FileDistributionApplication {
                 .addComponent(builder.newComponent("CronTriggeringPolicy").addAttribute("schedule", "0 0 0 * * ?"))
                 .addComponent(builder.newComponent("SizeBasedTriggeringPolicy").addAttribute("size", "100M"));
         appenderBuilder = builder.newAppender("rolling", "RollingFile")
-                .addAttribute("fileName", _logFilePath)
-                .addAttribute("filePattern", _logFilePath+".gz")
+                .addAttribute("fileName", logFilePath)
+                .addAttribute("filePattern", logFilePath+".gz")
                 .add(layoutBuilder)
                 .addComponent(triggeringPolicy);
         builder.add(appenderBuilder);

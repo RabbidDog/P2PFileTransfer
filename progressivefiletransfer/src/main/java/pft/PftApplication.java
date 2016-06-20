@@ -18,12 +18,17 @@ import java.util.Properties;
  * Created by rabbiddog on 6/18/16.
  */
 public class PftApplication {
-    private static String _logFilePath;
+    public static String logFilePath;
+    public static String mainFolder;
 
     public static void main(String [] args) {
 
         PftApplication.loadLogFile();
         PftApplication.setuplogging();
+
+        /*currently running only as a listner*/
+        PacketService pckService = new PacketService(mainFolder);
+        pckService.Start();
     }
 
     private static void loadLogFile()
@@ -34,7 +39,8 @@ public class PftApplication {
             FileReader reader = new FileReader(configFile);
             Properties props = new Properties();
             props.load(reader);
-            _logFilePath= props.getProperty("logfile");
+            logFilePath= props.getProperty("logfile");
+            mainFolder = props.getProperty("pathServer");
             reader.close();
 
         } catch (FileNotFoundException ex) {
@@ -63,8 +69,8 @@ public class PftApplication {
                 .addComponent(builder.newComponent("CronTriggeringPolicy").addAttribute("schedule", "0 0 0 * * ?"))
                 .addComponent(builder.newComponent("SizeBasedTriggeringPolicy").addAttribute("size", "100M"));
         appenderBuilder = builder.newAppender("rolling", "RollingFile")
-                .addAttribute("fileName", _logFilePath)
-                .addAttribute("filePattern", _logFilePath+".gz")
+                .addAttribute("fileName", logFilePath)
+                .addAttribute("filePattern", logFilePath+".gz")
                 .add(layoutBuilder)
                 .addComponent(triggeringPolicy);
         builder.add(appenderBuilder);

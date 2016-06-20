@@ -2,13 +2,18 @@ package distribution;
 
 import java.io.*;
 import java.io.File;
+
+import entity.Chunk;
+import entity.FileChunkInfo;
+import entity.Peer;
 import org.apache.logging.log4j.Logger;
 import java.io.*;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.util.LinkedList;
-import java.util.Properties;
+import java.net.SocketAddress;
+import java.nio.ByteBuffer;
+import java.util.*;
 
 /**
  * Created by ankur on 14.06.2016.
@@ -20,6 +25,7 @@ import pft.*;
 import java.io.FileReader;
 
 import pft.file_operation.PftFileManager;
+import pft.frames.DataRequest;
 
 public class FileDistributionHandler {
     private Logger _log;
@@ -33,17 +39,20 @@ public class FileDistributionHandler {
     private int numberOfChunks;
     private int sizeOfChunks = 16*1024;
     private int leftOverChunk;
+    private HashMap<Integer, Peer> peerMap;
+    private FileChunkInfo _fileChunkInfo;
 
     public FileDistributionHandler(String fileName, LinkedList<String> nodeList) throws FileNotFoundException {
         _log = LogManager.getRootLogger();
 
         this.fileName = fileName;
         this.nodeList = nodeList;
-        fileManager = new PftFileManager(fileName);
+        fileManager = new PftFileManager(FileDistributionApplication.mainFolder+fileName);
         if(fileManager.fileExits()){
             this.fileExists = true;
             fileSize = fileManager.getSize();
             fileSha = fileManager.getHash("SHA-1", 0, (int)this.fileSize);
+            _fileChunkInfo = new FileChunkInfo(this.fileName, this.fileSha);
         }
         else {
             throw new FileNotFoundException("FileChunkInfo doesnot Exist");
@@ -67,37 +76,12 @@ public class FileDistributionHandler {
     }
 
     public void startDistribution() throws IOException {
-        int peer_count = 0;
-        int numberOfPeers = nodeList.size();
-        int offset = 0;
-        byte[] chunk;
 
-
-        try{
-
-            for (int i = 0; i < numberOfChunks; i++) {
-                chunk = fileManager.readFromPosition(offset, sizeOfChunks);
-                // A function call to pft to be implemented
-                //TODO : Modified Pft
-                // pft_upload(nodeList.get(peer_count), fileParameters, Offset, length....)
-
-                peer_count = (peer_count + 1) % numberOfPeers;
-                //upload the chunk to the next peer for high availability
-                // pft_upload(nodeList.get(peer_count), fileParameters, Offset, length....)
-
-                offset = offset + sizeOfChunks;
-            }
-            if (leftOverChunk !=0) {
-                //upload the leftoverChunk to two peers
-                chunk = fileManager.readFromPosition(offset, leftOverChunk);
-                // pft_upload(nodeList.get(peer_count), fileParameters, Offset, length....)
-
-                peer_count = (peer_count + 1) % numberOfPeers;
-                // pft_upload(nodeList.get(peer_count), fileParameters, Offset, length....)
-            }
-        }finally {
-        }
-
+        PacketService pckService = new PacketService(FileDistributionApplication.mainFolder);
+        pckService.Start();
+        Random rand = new Random();
+        UploadHandler uploadHandler = new UploadHandler(_fileChunkInfo, FileDistributionApplication.mainFolder+fileName, pckService._server._sendBuffer, rand, pckService._dataRequestQueueForIdentifier);
+        uploadHandler.startUpload();
     }
     public void generateTorrentFile() throws IOException {
         int peer_count = 0;
@@ -108,7 +92,17 @@ public class FileDistributionHandler {
         //TODO: Implement Logger instead of System.out.print
         _log.info("Torrent file directory"+path);
 
-        System.out.println();
+        this.peerMap = new HashMap<>();
+        int i = 0;
+        for (String hostname:nodeList)
+        {
+            String[] hs = hostname.split(":");
+            Peer p = new Peer();
+            p.address = hs[0];
+            p.port = Integer.parseInt(hs[1]);
+            peerMap.putIfAbsent(i, p);
+            i++;
+        }
 
         RandomAccessFile torrentFile = new RandomAccessFile(new File(path + "\\" + fileName + ".torrent"), "rw");
         try{
@@ -124,17 +118,20 @@ public class FileDistributionHandler {
                 torrentFile.writeBytes(Integer.toString(j)+" ");
                 torrentFile.writeBytes(nodeList.get(j) + "\r\n");
             }
-            for (int i = 0; i < numberOfChunks; i++) {
-                chunk = fileManager.readFromPosition(offset, sizeOfChunks);
-                // A function call to pft to be implemented
-                //TODO : Modified Pft
-                // pft_upload(nodeList.get(peer_count), fileParameters, Offset, length....)
-                //write the entry in the torrent file
+            for (i = 0; i < numberOfChunks; i++) {
+                Chunk ch=new Chunk();
+                ch.offset = offset;
+                ch.length = sizeOfChunks;
+                ch.isDownloaded = false;
+                ch.peerList = new ArrayList<>();
+
                 torrentFile.writeBytes(Long.toString(offset)+" ");
                 torrentFile.writeBytes(Integer.toString(peer_count)+" ");
+                ch.peerList.add(peerMap.get(peer_count));
+
                 peer_count = (peer_count + 1) % numberOfPeers;
-                //upload the chunk to the next peer for high availability
-                // pft_upload(nodeList.get(peer_count), fileParameters, Offset, length....)
+                ch.peerList.add(peerMap.get(peer_count));
+                _fileChunkInfo.chunkInfo.add(ch);
                 torrentFile.writeBytes(Integer.toString(peer_count) + "\r\n");
                 offset = offset + sizeOfChunks;
             }

@@ -28,7 +28,7 @@ public class UploadResponder {
         AtomicLong highestOffsetReceived = new AtomicLong(0);
         Future sender =  executorService.submit(new SendDataRequestPacket(request.identifier(), request.fileName(), request.sha1(), request.offset(), request.length(), destination, pendingPackets, sendBuffer, currentOffset));
         Future resender = executorService.submit(new ResendDataRequestPacket(request.identifier(), request.fileName(), destination, currentOffset, request.length(), highestOffsetReceived, pendingPackets,  sendBuffer));
-        Future processor = executorService.submit(new ProcessDataResponsePacket(request.identifier(), request.fileName(), currentOffset, request.length(), highestOffsetReceived, dataresponseBuffer, pendingPackets,destination, sendBuffer));
+        Future processor = executorService.submit(new ProcessDataResponsePacket(request.identifier(), request.fileName(), currentOffset, request.length(), highestOffsetReceived, dataresponseBuffer, pendingPackets,destination, sendBuffer,fileManager));
 
         return executorService;
     }

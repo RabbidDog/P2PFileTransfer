@@ -6,6 +6,8 @@ import entity.Peer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import pft.Framer;
+import pft.file_operation.IFileFacade;
+import pft.file_operation.PftFileManager;
 import pft.frames.DataRequest;
 import pft.frames.DataResponse;
 import pft.frames.DownloadRequest;
@@ -126,6 +128,7 @@ public class DownloadHandler implements RunnableFuture {
             _log.error(TAG + " run: filechunkinfo for filename " + fileName +" returned null");
             return;
         }
+        IFileFacade fileManager = new PftFileManager(TorrentApplication._mainFolder+fileName);
         /*choose a chunk to download*/
         final BlockingQueue<Runnable> queue = new ArrayBlockingQueue<>(100);
             ExecutorService executorService = new ThreadPoolExecutor(15, 15,
@@ -179,7 +182,7 @@ public class DownloadHandler implements RunnableFuture {
                 AtomicLong highestOffsetReceived = new AtomicLong(0);
                 Future sender =  executorService.submit(new SendDataRequestPacket(identifier, _fFileChunkInfo.FileName, _fFileChunkInfo.fileHash, nextChunkToDownload.offset, nextChunkToDownload.length, source, pendingPackets, _sendBuffer, currentOffset));
                 Future resender = executorService.submit(new ResendDataRequestPacket(identifier, _fFileChunkInfo.FileName, source, currentOffset, nextChunkToDownload.length, highestOffsetReceived, pendingPackets,  _sendBuffer));
-                Future processor = executorService.submit(new ProcessDataResponsePacket(identifier, _fFileChunkInfo.FileName, currentOffset, nextChunkToDownload.length, highestOffsetReceived, dataRespBuff, pendingPackets,source, _sendBuffer));
+                Future processor = executorService.submit(new ProcessDataResponsePacket(identifier, _fFileChunkInfo.FileName, currentOffset, nextChunkToDownload.length, highestOffsetReceived, dataRespBuff, pendingPackets,source, _sendBuffer, fileManager));
 
                 //executorService.submit();
             }
