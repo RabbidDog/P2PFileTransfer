@@ -20,7 +20,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  * Created by rabbiddog on 6/19/16.
  */
 public class SendDataResponsePacket implements Runnable {
-    private int identifier;
+    private final int identifier;
     private String fileName;
     private long startOffset;
     private long totalLength;
@@ -54,6 +54,7 @@ public class SendDataResponsePacket implements Runnable {
         _log.debug(TAG  + "SendDataResponsePacket process started");
         for(;;)
         {
+            _log.debug(TAG + "Destination of packet will be  "+ destination.toString());
             if((System.currentTimeMillis() - lastTimePacketsReceived) > 10000) //10sec
             {
                 _log.debug(TAG + "No request received in 10 sec. Closing...");
@@ -97,8 +98,14 @@ public class SendDataResponsePacket implements Runnable {
                     {
                         _log.debug(TAG + "Offset not in buffer. Read from file");
                         fileManager.bufferedRead(offset, reqLength * 5, defaultPacketSize, bufferedFileData);
+                        dataFromFile = bufferedFileData.remove(offset);
                     }
-                    DataResponse dataResponse = new DataResponse(identifier,offset, readBytes, dataFromFile);
+                    if(null == dataFromFile)
+                    {
+                        _log.error(TAG + " dataFileFile still null after read");
+                    }
+                    DataResponse dataResponse = new DataResponse(identifier,offset, dataFromFile.length, dataFromFile);
+                    _log.debug("Response packet getiing ready with length: " + dataFromFile.length);
                     ByteBuffer packetBuffer = ByteBuffer.wrap(_framer.frame(dataResponse));
                     _sendBuffer.add(Pair.with(packetBuffer, destination));
 

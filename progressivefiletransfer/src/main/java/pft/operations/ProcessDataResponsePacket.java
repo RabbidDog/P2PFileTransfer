@@ -63,7 +63,6 @@ public class ProcessDataResponsePacket implements Callable<Long>{
                 _log.debug(TAG + " Executor ShutdownNow requested. Shutting down processPacketFuture");
                 break;
             }
-            _log.debug(TAG + " will process packet now");
             try
             {
                 DataResponse response = incomingFrames.poll();

@@ -24,6 +24,8 @@ public class Deframer {
       buffer.writeBytes(data);
 
       int length = buffer.readUnsignedShort();
+      System.out.println("Data.lengh is: " + data.length);
+      System.out.println("Length is" + length);
       checkState(data.length == length + 7);
 
       byte type = buffer.readByte();

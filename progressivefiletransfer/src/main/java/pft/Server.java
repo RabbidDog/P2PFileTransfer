@@ -4,14 +4,15 @@ package pft;
  * Created by rabbiddog on 6/16/16.
  */
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.PooledByteBufAllocator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.javatuples.Pair;
 import pft.frames.Frame;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.net.SocketAddress;
+import java.net.*;
 import java.nio.ByteBuffer;
 import java.nio.channels.DatagramChannel;
 import java.util.Arrays;
@@ -30,12 +31,16 @@ public class Server extends PftChannel{
     }
 
     public DatagramChannel _serverChannel;
+    public DatagramSocket _serverSocket;
     public final ConcurrentLinkedQueue<Pair<ByteBuffer ,SocketAddress>> _sendBuffer;
     public final ConcurrentLinkedQueue<Pair<ByteBuffer, SocketAddress>> _receiveBuffer;
     private ExecutorService _execService = Executors.newFixedThreadPool(2);
     Future _processIncoming, _processOutgoing;
     Framer _framer;
     Deframer _deframer;
+    private static final PooledByteBufAllocator ALLOCATOR =
+            PooledByteBufAllocator.DEFAULT;
+    private byte[] _receiveBuf = new byte[1024];
     public Server(int port)
     {
         _log = LogManager.getRootLogger();
@@ -46,9 +51,10 @@ public class Server extends PftChannel{
         _receiveBuffer = new ConcurrentLinkedQueue<Pair<ByteBuffer ,SocketAddress>>();
         try
         {
-             _serverChannel = DatagramChannel.open();
+             /*_serverChannel = DatagramChannel.open();
             _serverChannel.socket().bind(new InetSocketAddress(port));
-            _serverChannel.configureBlocking(false);
+            _serverChannel.configureBlocking(false);*/
+            _serverSocket = new DatagramSocket(port);
         }catch (IOException io)
         {
             _log.error("Server constructor while creating DatagramChannel. " + io.getMessage());
@@ -107,7 +113,12 @@ public class Server extends PftChannel{
                             continue;
                         }
                         Pair<ByteBuffer, SocketAddress> toSend = _sendBuffer.poll();
-                        _serverChannel.send(toSend.getValue0(), toSend.getValue1() );
+                        byte[] _sendBuf = toSend.getValue0().array();
+                        InetSocketAddress destination = (InetSocketAddress)toSend.getValue1();
+                        DatagramPacket packet = new DatagramPacket(_sendBuf, _sendBuf.length, destination.getAddress(), destination.getPort());
+                        _serverSocket.send(packet);
+                        //_serverChannel.send(toSend.getValue0(), toSend.getValue1() );
+                        _log.debug(TAG + "Sent out a packet on the channel");
 
                     }catch(IOException ioe)
                     {
@@ -141,14 +152,41 @@ public class Server extends PftChannel{
     @Override
     public void receive()
     {
-        ByteBuffer buf = ByteBuffer.allocate(8096);
         try {
-            SocketAddress sockAddr = _serverChannel.receive(buf);
-            byte[] actual = Arrays.copyOfRange(buf.array(), 0, buf.position());
-            this._receiveBuffer.add(Pair.with( ByteBuffer.wrap(actual),sockAddr));
-            buf.clear();
+            /*SocketAddress sockAddr = _serverChannel.receive(_receiveBuf);
+            if(sockAddr == null)
+            {
+                Thread.currentThread().sleep(100);
+                return;
+            }
+            _log.debug(TAG + "channel received packet");
+            if(_receiveBuf.limit() == 0)
+            {
+                int i = 1;
+            }
+            System.out.println("Limit: " + _receiveBuf.limit());
+            System.out.println("Posiion: " + _receiveBuf.position());
+            System.out.println("Mark" + _receiveBuf.mark());
+            byte[] actual = Arrays.copyOfRange(_receiveBuf.array(), 0, _receiveBuf.position());
+            Frame f = _deframer.deframe(actual);
+            _log.debug(TAG + " type of packet "+ f.type());
+            this._receiveBuffer.add(Pair.with( ByteBuffer.wrap(actual),sockAddr));*/
+            _log.debug(TAG + "Expecting to receive a packet in socket");
+            DatagramPacket packet = new DatagramPacket(_receiveBuf, _receiveBuf.length);
+            _serverSocket.receive(packet);
+            _log.debug("Received packet");
+            int length = packet.getLength();
+            byte[] data = Arrays.copyOf(packet.getData(), length);
+            Frame f = _deframer.deframe(data);
+            _log.debug(TAG + " Type of received packet" + f.type());
+            this._receiveBuffer.add(Pair.with( ByteBuffer.wrap(data),new InetSocketAddress(packet.getAddress(), packet.getPort())));
+
         } catch (IOException e) {
-            e.printStackTrace();
+            _log.error(TAG + e.getStackTrace());
         }
+        /*catch(InterruptedException ie)
+        {
+            _log.debug(TAG + ie.getStackTrace());
+        }*/
     }
 }

@@ -75,21 +75,21 @@ public class PacketService implements Runnable{
     {
 
         /*Selector service*/
-        try
+       /* try
         {
             _keys = new SelectionKey[2];
             _selector = Selector.open();
             /*server channel*/
-            DatagramChannel serverHandle = _server.get_serverChannel();
+            /*DatagramChannel serverHandle = _server.get_serverChannel();
             _keys[0] = serverHandle.register(_selector, SelectionKey.OP_READ, _server);
             _log.debug(TAG + "Started PacketService");
             /*client channel*/
             /*DatagramChannel clientHandle = _client.get_clientChannel();
-            _keys[1] = clientHandle.register(_selector, SelectionKey.OP_READ, _client);*/
+            _keys[1] = clientHandle.register(_selector, SelectionKey.OP_READ, _client);
         }catch (IOException ioe)
         {
             _log.error(TAG + ioe.getMessage() + " " + ioe.getStackTrace());
-        }
+        }*/
         ByteBuffer packet = ByteBuffer.allocate(MAX_PACKET);
         //spin server
         _server.spin(_allreceivedframe);
@@ -151,7 +151,10 @@ public class PacketService implements Runnable{
                         if(_dataResponseQueueForIdentifier.containsKey(resp.identifier()))
                         {
                             ConcurrentLinkedQueue<DataResponse> respBuffer = _dataResponseQueueForIdentifier.get(resp.identifier());
+                            _log.debug(TAG + "Dataresponse for know responseBuffer received");
+                            _log.debug(TAG + "DataresponseBuffer size before add"+respBuffer.size());
                             respBuffer.add(resp);
+                            _log.debug(TAG + "DataresponseBuffer size after add"+respBuffer.size());
                         }else
                         {
                             _log.debug(TAG + " DataResponse is unexpected identifier received. Packet will not be processed");
@@ -196,10 +199,18 @@ public class PacketService implements Runnable{
         Iterator _keysIterator = null;
         SelectionKey _currentKey = null;
 
-        while (true)
+        Thread receiveTh = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                while (true)
+                    _server.receive();
+            }
+        });
+        receiveTh.start();
+        /*while (true)
         {
             _server.receive();
-        }
+        }*/
 
         /*while(true)
         {

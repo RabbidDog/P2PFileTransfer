@@ -92,6 +92,7 @@ public class SendDataRequestPacket implements Callable<Long> {
                             DataRequest request = new DataRequest(identifier, fileName, _hashCode, currentOffset.get(), defaultPacketSize*packetsToSend, length);
                             packetBuffer = ByteBuffer.wrap(_framer.frame(request));
                             Pair<ByteBuffer ,SocketAddress> p = Pair.with(packetBuffer, destination);
+                            _log.debug(TAG + "Add data request to send buffer for offset"+ currentOffset.get());
                             _sendBuffer.add(p);
                             //create required number of packet request for later request
                             for (int i = 0; i < packetsToSend; i++) {
